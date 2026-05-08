@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>文章 · awaw_a</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans SC',sans-serif;overflow-x:hidden}
+  .dot-bg{background-image:radial-gradient(#c7d2fe 1px,transparent 1px);background-size:32px 32px}
+
+  .nav-link{position:relative;transition:color .3s;cursor:pointer}
+  .nav-link::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:2px;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:1px;transition:width .3s}
+  .nav-link:hover::after,.nav-link.active::after{width:70%}
+  .social-icon{transition:all .3s}
+  .social-icon:hover{transform:scale(1.2) translateY(-3px)}
+  .mobile-menu{max-height:0;overflow:hidden;transition:max-height .35s,opacity .35s;opacity:0}
+  .mobile-menu.open{max-height:280px;opacity:1}
+
+  /* 文章内容二次元微调 */
+  .prose h1{font-size:2rem !important;font-weight:900 !important;background:linear-gradient(135deg,#6366f1,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+  .prose h2{font-weight:700 !important;margin-top:1.75rem !important;padding-bottom:.35rem;border-bottom:2px solid #e0e7ff}
+  .prose blockquote{border-left-color:#a5b4fc !important;background:linear-gradient(90deg,rgba(238,242,255,.6),transparent);padding:.75rem 1.25rem !important;border-radius:0 .75rem .75rem 0}
+  .prose a{color:#6366f1 !important;text-decoration:none !important;border-bottom:1px dashed #a5b4fc;transition:all .2s}
+  .prose a:hover{border-bottom-style:solid;color:#4f46e5 !important}
+  .prose code{background:#f1f5f9 !important;padding:.15em .4em !important;border-radius:4px;font-size:.9em;color:#6366f1}
+  .prose pre{background:#1e293b !important;border-radius:1rem !important}
+  .prose pre code{background:transparent !important;color:#e2e8f0 !important;padding:0 !important}
+  .prose img{border-radius:1rem !important;box-shadow:0 4px 20px rgba(0,0,0,.06)}
+  .prose ul li::marker{color:#a5b4fc}
+
+  /* 加载动画 */
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loader{border:3px solid #e0e7ff;border-top-color:#6366f1;border-radius:50%;width:36px;height:36px;animation:spin .8s linear infinite}
+
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in{animation:fadeIn .5s ease forwards}
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50/60 to-pink-50 dot-bg">
+
+  <!-- 导航栏 -->
+  <nav class="fixed top-0 left-0 right-0 z-50">
+    <div class="mx-auto max-w-6xl px-4 py-3 md:py-4">
+      <div class="backdrop-blur-xl bg-white/50 rounded-2xl shadow-sm border border-white/60 px-5 md:px-10 py-3 md:py-4 flex items-center justify-between">
+        <a href="/" class="text-xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">awaw_a</a>
+        <div class="hidden md:flex items-center gap-10">
+          <a href="/" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">首页</a>
+          <a href="/chat" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">聊天</a>
+          <a href="/blog" class="nav-link active text-sm font-bold text-indigo-600">博客</a>
+          <a href="/changelog" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">日志</a>
+        </div>
+        <div class="hidden md:flex items-center gap-5">
+          <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500"><i class="fa-brands fa-bilibili text-xl"></i></a>
+          <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800"><i class="fa-brands fa-github text-xl"></i></a>
+        </div>
+        <button id="menuBtn" class="md:hidden text-gray-500 hover:text-indigo-600 p-1"><i id="menuIcon" class="fa-solid fa-bars text-xl"></i></button>
+      </div>
+      <div id="mobileMenu" class="mobile-menu md:hidden">
+        <div class="backdrop-blur-xl bg-white/50 rounded-xl shadow-sm border border-white/60 mt-2 px-6 py-5 flex flex-col gap-4">
+          <a href="/" class="text-sm font-medium text-gray-500">首页</a>
+          <a href="/chat" class="text-sm font-medium text-gray-500">聊天</a>
+          <a href="/blog" class="text-sm font-bold text-indigo-600">博客</a>
+          <a href="/changelog" class="text-sm font-medium text-gray-500">日志</a>
+          <div class="flex gap-5 pt-3 border-t border-gray-200/40">
+            <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500"><i class="fa-brands fa-bilibili text-xl"></i></a>
+            <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800"><i class="fa-brands fa-github text-xl"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- 文章内容 -->
+  <main class="pt-28 md:pt-36 pb-20 px-4">
+    <div class="mx-auto max-w-3xl">
+
+      <!-- 头部（加载前） -->
+      <div id="articleHeader" class="mb-8 text-center">
+        <div class="flex justify-center py-12">
+          <div class="loader"></div>
+        </div>
+        <p class="text-gray-400 text-sm">加载中...</p>
+      </div>
+
+      <!-- Markdown 内容区 -->
+      <div id="articleBody" class="fade-in hidden">
+        <div id="markdownContent" class="prose prose-slate mx-auto max-w-none"></div>
+        <div class="mt-12 pt-8 border-t border-gray-200/40 text-center">
+          <a href="/blog" class="inline-flex items-center gap-2 text-sm text-indigo-400 hover:text-indigo-600 transition-colors">
+            <i class="fa-solid fa-arrow-left text-xs"></i> 返回博客列表
+          </a>
+        </div>
+      </div>
+
+      <!-- 404 错误 -->
+      <div id="articleError" class="hidden text-center py-20">
+        <div class="text-6xl mb-4">🔍</div>
+        <h2 class="text-xl font-bold text-gray-700 mb-2">文章未找到</h2>
+        <p class="text-gray-400 text-sm mb-6">这个页面似乎迷失在了次元裂缝中……</p>
+        <a href="/blog" class="inline-flex items-center gap-2 px-5 py-2.5 bg-indigo-500 text-white text-sm rounded-full shadow-md shadow-indigo-200 hover:bg-indigo-600 transition-colors">
+          <i class="fa-solid fa-arrow-left text-xs"></i> 返回博客
+        </a>
+      </div>
+
+    </div>
+  </main>
+
+  <script>
+    // 移动端菜单
+    var b=document.getElementById('menuBtn'),m=document.getElementById('mobileMenu'),i=document.getElementById('menuIcon');
+    b.onclick=function(){var o=m.classList.toggle('open');i.className=o?'fa-solid fa-xmark text-xl':'fa-solid fa-bars text-xl'};
+    m.querySelectorAll('a').forEach(function(l){l.onclick=function(){m.classList.remove('open');i.className='fa-solid fa-bars text-xl'}});
+
+    // 文章加载
+    (async function(){
+      var params = new URLSearchParams(window.location.search);
+      var id = params.get('id');
+      var header = document.getElementById('articleHeader');
+      var body = document.getElementById('articleBody');
+      var error = document.getElementById('articleError');
+      var mdDiv = document.getElementById('markdownContent');
+
+      if(!id){
+        showError();
+        return;
+      }
+
+      try {
+        var resp = await fetch('/posts/' + id + '.md');
+        if(!resp.ok) throw new Error('Not found');
+        var md = await resp.text();
+
+        // 解析 Markdown
+        var html = marked.parse(md);
+
+        // 提取第一行作为标题
+        var lines = md.trim().split('\n');
+        var title = '';
+        for(var j=0; j<lines.length; j++){
+          var l = lines[j].trim();
+          if(l.startsWith('# ') && !l.startsWith('## ')){
+            title = l.replace(/^# /,'');
+            break;
+          }
+        }
+        if(!title) title = id;
+
+        // 尝试提取日期（查找"> 写于"行）
+        var date = '';
+        for(var k=0; k<lines.length; k++){
+          var d = lines[k].trim();
+          var m = d.match(/写于(.+)/);
+          if(m){ date = m[1].trim(); break; }
+        }
+
+        // 更新页面
+        document.title = title + ' · awaw_a';
+        header.innerHTML = '<h1 class="text-2xl md:text-3xl font-black text-gray-800 mb-2">' + title + '</h1>' +
+          (date ? '<p class="text-sm text-gray-400 font-mono">' + date + '</p>' : '') +
+          '<div class="mx-auto mt-4 w-12 h-1 rounded-full bg-gradient-to-r from-indigo-400 to-purple-400 opacity-60"></div>';
+
+        mdDiv.innerHTML = html;
+        body.classList.remove('hidden');
+
+        // 代码高亮（简单处理）
+        mdDiv.querySelectorAll('pre code').forEach(function(block){
+          block.style.display = 'block';
+          block.style.overflowX = 'auto';
+          block.style.padding = '1rem';
+        });
+
+      } catch(e){
+        console.error('加载文章失败:', e);
+        showError();
+      }
+    })();
+
+    function showError(){
+      document.getElementById('articleHeader').classList.add('hidden');
+      document.getElementById('articleBody').classList.add('hidden');
+      document.getElementById('articleError').classList.remove('hidden');
+      document.title = '404 · awaw_a';
+    }
+  </script>
+</body>
+</html>

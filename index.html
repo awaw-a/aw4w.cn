@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>awaw_a · 若叶睦</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans SC', sans-serif; overflow-x: hidden; }
+
+  /* 浮动动画 */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-12px); }
+  }
+  .animate-float {
+    animation: float 3.5s ease-in-out infinite;
+  }
+
+  /* 聊天气泡 */
+  .chat-bubble {
+    position: relative;
+    background: #fff;
+    border-radius: 1.5rem;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 8px 32px rgba(99,102,241,0.10), 0 2px 8px rgba(0,0,0,0.04);
+  }
+  /* 气泡尾巴 - 指向左下（朝向角色） */
+  .chat-bubble-desktop::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 16px;
+    transform: rotate(45deg);
+    width: 18px;
+    height: 18px;
+    background: #fff;
+    border-radius: 0 0 4px 0;
+    box-shadow: 3px 3px 6px rgba(0,0,0,0.04);
+  }
+
+  /* 打字机光标 */
+  .typing-cursor {
+    display: inline-block;
+    width: 2.5px;
+    height: 1.1em;
+    background: #6366f1;
+    margin-left: 3px;
+    animation: blink 0.8s infinite;
+    vertical-align: text-bottom;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+
+  /* 导航链接下划线动效 */
+  .nav-link {
+    position: relative;
+    transition: color 0.3s ease;
+    cursor: pointer;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #a855f7);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+  }
+  .nav-link:hover::after,
+  .nav-link.active::after {
+    width: 70%;
+  }
+
+  /* 社交图标浮动 */
+  .social-icon {
+    transition: all 0.3s ease;
+  }
+  .social-icon:hover {
+    transform: scale(1.2) translateY(-3px);
+  }
+
+  /* 移动端菜单 */
+  .mobile-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+    opacity: 0;
+  }
+  .mobile-menu.open {
+    max-height: 260px;
+    opacity: 1;
+  }
+
+  /* 淡入动画 */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up {
+    animation: fadeInUp 0.8s ease forwards;
+  }
+
+  /* 桌面端网格背景 */
+  .dot-bg {
+    background-image: radial-gradient(#c7d2fe 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50/60 to-pink-50 dot-bg">
+
+  <!-- ====== 导航栏 ====== -->
+  <nav class="fixed top-0 left-0 right-0 z-50">
+    <div class="mx-auto max-w-6xl px-4 py-3 md:py-4">
+      <div class="backdrop-blur-xl bg-white/50 rounded-2xl shadow-sm border border-white/60 px-5 md:px-10 py-3 md:py-4 flex items-center justify-between">
+        
+        <!-- Logo -->
+        <a href="#" class="text-xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+          awaw_a</a>
+
+        <!-- 桌面端菜单 -->
+        <div class="hidden md:flex items-center gap-10">
+          <span class="nav-link active text-sm font-medium text-indigo-600">首页</span>
+          <a href="/chat" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">聊天</a>
+          <a href="/blog" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">博客</a>
+          <a href="/changelog" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">日志</a>
+        </div>
+
+        <!-- 桌面端社交图标 -->
+        <div class="hidden md:flex items-center gap-5">
+          <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500">
+            <i class="fa-brands fa-bilibili text-xl"></i>
+          </a>
+          <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800">
+            <i class="fa-brands fa-github text-xl"></i>
+          </a>
+        </div>
+
+        <!-- 移动端汉堡按钮 -->
+        <button id="menuBtn" class="md:hidden text-gray-500 hover:text-indigo-600 transition-colors p-1" aria-label="菜单">
+          <i id="menuIcon" class="fa-solid fa-bars text-xl"></i>
+        </button>
+      </div>
+
+      <!-- 移动端菜单 -->
+      <div id="mobileMenu" class="mobile-menu md:hidden">
+        <div class="backdrop-blur-xl bg-white/50 rounded-xl shadow-sm border border-white/60 mt-2 px-6 py-5 flex flex-col gap-4">
+          <span class="text-sm font-medium text-indigo-600">首页</span>
+          <a href="/chat" class="text-sm font-medium text-gray-500 hover:text-indigo-600">聊天</a>
+          <a href="/blog" class="text-sm font-medium text-gray-500 hover:text-indigo-600">博客</a>
+          <a href="/changelog" class="text-sm font-medium text-gray-500 hover:text-indigo-600">日志</a>
+          <div class="flex gap-5 pt-3 border-t border-gray-200/40">
+            <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500">
+              <i class="fa-brands fa-bilibili text-xl"></i></a>
+            <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800">
+              <i class="fa-brands fa-github text-xl"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ====== Hero 区域 ====== -->
+  <main class="min-h-screen flex items-center justify-center px-4 md:px-8 pt-24 md:pt-0">
+    
+    <!-- 桌面端: 左右flex布局；移动端: 堆叠 -->
+    <div class="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-8 md:gap-0">
+      
+      <!-- 左侧文字区 -->
+      <div class="flex flex-col items-center md:items-start gap-4 md:gap-6 fade-in-up z-20 md:flex-1">
+        
+        <!-- 标题 -->
+        <div class="text-center md:text-left">
+          <p class="text-indigo-400 text-xs md:text-sm tracking-[0.25em] mb-2 font-medium">WELCOME TO MY SPACE</p>
+          <h1 class="text-3xl md:text-6xl font-bold text-gray-800 leading-tight whitespace-nowrap">
+            若叶<span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">睦</span>
+          </h1>
+          <p class="text-gray-400 text-sm md:text-lg mt-2 md:mt-4 whitespace-nowrap">
+            guitarist · 月之森女子学园 · Ave Mujica
+          </p>
+        </div>
+
+        <!-- 状态标签 -->
+        <div class="flex flex-wrap gap-2 md:gap-3">
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 md:px-5 md:py-2.5 bg-white/70 backdrop-blur-sm rounded-full text-xs text-gray-500 shadow-sm border border-white/60">
+            <span class="w-2 h-2 rounded-full bg-green-400"></span>
+            在线
+          </span>
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 md:px-5 md:py-2.5 bg-white/70 backdrop-blur-sm rounded-full text-xs text-gray-500 shadow-sm border border-white/60">
+            <i class="fa-solid fa-guitar text-indigo-400"></i>
+            吉他手
+          </span>
+          <span class="inline-flex items-center gap-2 px-3 py-1.5 md:px-5 md:py-2.5 bg-white/70 backdrop-blur-sm rounded-full text-xs text-gray-500 shadow-sm border border-white/60">
+            <i class="fa-solid fa-seedling text-green-400"></i>
+            黄瓜种植
+          </span>
+        </div>
+      </div>
+
+      <!-- 右侧: 动漫角色 + 气泡 -->
+      <div class="relative flex-shrink-0 animate-float z-10 md:ml-12">
+        <div class="w-40 h-40 md:w-80 md:h-80 rounded-full bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-5 md:p-8 shadow-xl shadow-indigo-100/50 ring-4 ring-white/70">
+          <img 
+            src="/avatar_v2.png" 
+            alt="动漫角色" 
+            class="w-full h-full object-contain drop-shadow-lg"
+            loading="eager"
+          >
+        </div>
+
+        <!-- 聊天气泡 - 绝对定位在角色右上方 -->
+        <div class="absolute -top-2 md:-top-4 -right-8 md:-right-12 lg:-right-20 z-30 animate-float" style="animation-delay: 0.5s;">
+          <div class="chat-bubble chat-bubble-desktop">
+            <span id="typewriter" class="text-gray-700 font-mono text-sm md:text-base tracking-wide" style="font-family:'JetBrains Mono',monospace"></span>
+            <span class="typing-cursor" id="cursor"></span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ====== 脚本 ====== -->
+  <script>
+    // 打字机效果
+    const text = "hello world!";
+    const speed = 110;
+    const typewriterEl = document.getElementById('typewriter');
+    const cursorEl = document.getElementById('cursor');
+    let charIndex = 0;
+
+    function type() {
+      if (charIndex < text.length) {
+        typewriterEl.textContent += text.charAt(charIndex);
+        charIndex++;
+        setTimeout(type, speed);
+      } else {
+        setTimeout(() => { cursorEl.style.display = 'none'; }, 2500);
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      setTimeout(type, 500);
+    });
+
+    // 移动端菜单
+    const menuBtn = document.getElementById('menuBtn');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const menuIcon = document.getElementById('menuIcon');
+
+    menuBtn.addEventListener('click', () => {
+      const isOpen = mobileMenu.classList.toggle('open');
+      menuIcon.className = isOpen 
+        ? 'fa-solid fa-xmark text-xl' 
+        : 'fa-solid fa-bars text-xl';
+    });
+
+    mobileMenu.querySelectorAll('span, a').forEach(el => {
+      el.addEventListener('click', () => {
+        mobileMenu.classList.remove('open');
+        menuIcon.className = 'fa-solid fa-bars text-xl';
+      });
+    });
+
+    // 导航栏激活切换
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active', 'text-indigo-600'));
+        link.classList.add('active', 'text-indigo-600');
+      });
+    });
+  </script>
+
+</body>
+</html>

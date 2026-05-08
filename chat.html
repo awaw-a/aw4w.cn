@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>聊天 · awaw_a</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Noto Sans SC', sans-serif; overflow-x: hidden; }
+
+  /* 浮动动画 */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+  .animate-float { animation: float 3.5s ease-in-out infinite; }
+
+  /* 导航链接下划线动效 */
+  .nav-link {
+    position: relative;
+    transition: color 0.3s ease;
+    cursor: pointer;
+  }
+  .nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #a855f7);
+    border-radius: 1px;
+    transition: width 0.3s ease;
+  }
+  .nav-link:hover::after,
+  .nav-link.active::after { width: 70%; }
+
+  /* 社交图标 */
+  .social-icon {
+    transition: all 0.3s ease;
+  }
+  .social-icon:hover {
+    transform: scale(1.2) translateY(-3px);
+  }
+
+  /* 移动端菜单 */
+  .mobile-menu {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.35s ease, opacity 0.35s ease;
+    opacity: 0;
+  }
+  .mobile-menu.open {
+    max-height: 260px;
+    opacity: 1;
+  }
+
+  /* 背景点阵 */
+  .dot-bg {
+    background-image: radial-gradient(#c7d2fe 1px, transparent 1px);
+    background-size: 32px 32px;
+  }
+
+  /* 聊天面板 */
+  .chat-panel {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 6rem);
+    max-height: 680px;
+  }
+
+  /* 消息区域滚动条隐藏 */
+  .messages-area {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+  }
+  .messages-area::-webkit-scrollbar { width: 4px; }
+  .messages-area::-webkit-scrollbar-track { background: transparent; }
+  .messages-area::-webkit-scrollbar-thumb {
+    background: rgba(199,210,254,0.5);
+    border-radius: 2px;
+  }
+
+  /* 气泡基础 */
+  .bubble {
+    max-width: 75%;
+    padding: 0.7rem 1rem;
+    border-radius: 1.25rem;
+    line-height: 1.6;
+    font-size: 1rem;
+    word-break: break-word;
+    animation: bubbleIn 0.3s ease;
+  }
+  @keyframes bubbleIn {
+    from { opacity: 0; transform: translateY(8px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  /* 用户气泡 */
+  .bubble-user {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color: #fff;
+    border-bottom-right-radius: 0.35rem;
+    margin-left: auto;
+  }
+
+  /* AI气泡 */
+  .bubble-ai {
+    background: #fff;
+    color: #374151;
+    border: 1px solid rgba(226,232,240,0.8);
+    border-bottom-left-radius: 0.35rem;
+    margin-right: auto;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.04);
+  }
+
+  /* 系统气泡 */
+  .bubble-system {
+    background: #fef2f2;
+    color: #dc2626;
+    border: 1px solid #fecaca;
+    margin: 0 auto;
+    font-size: 0.8rem;
+    text-align: center;
+    max-width: 85%;
+  }
+
+  /* Loading动画 */
+  .typing-dots {
+    display: flex;
+    gap: 4px;
+    padding: 0.5rem 0;
+  }
+  .typing-dots span {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #c7d2fe;
+    animation: dotPulse 1.4s infinite ease-in-out;
+  }
+  .typing-dots span:nth-child(1) { animation-delay: 0s; }
+  .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+  .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes dotPulse {
+    0%, 60%, 100% { transform: scale(0.6); opacity: 0.4; }
+    30% { transform: scale(1); opacity: 1; }
+  }
+
+  /* 输入框 */
+  .chat-input {
+    resize: none;
+    outline: none;
+  }
+  .chat-input:focus {
+    box-shadow: 0 0 0 2px rgba(99,102,241,0.2);
+  }
+
+  /* 淡入 */
+  @keyframes fadeInUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .fade-in-up { animation: fadeInUp 0.7s ease forwards; }
+
+  /* 打字机光标 */
+  .typing-cursor-chat {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    background: #6366f1;
+    margin-left: 2px;
+    animation: blink 0.8s infinite;
+    vertical-align: text-bottom;
+  }
+  @keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0; }
+  }
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50/60 to-pink-50 dot-bg">
+
+  <!-- ====== 导航栏 ====== -->
+  <nav class="fixed top-0 left-0 right-0 z-50">
+    <div class="mx-auto max-w-6xl px-4 py-3 md:py-4">
+      <div class="backdrop-blur-xl bg-white/50 rounded-2xl shadow-sm border border-white/60 px-5 md:px-10 py-3 md:py-4 flex items-center justify-between">
+        
+        <a href="/" class="text-xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">
+          awaw_a</a>
+
+        <div class="hidden md:flex items-center gap-10">
+          <a href="/" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">首页</a>
+          <a href="/chat" class="nav-link active text-sm font-bold text-indigo-600">聊天</a>
+          <a href="/blog" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">博客</a>
+          <a href="/changelog" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">日志</a>
+        </div>
+
+        <div class="hidden md:flex items-center gap-5">
+          <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500">
+            <i class="fa-brands fa-bilibili text-xl"></i></a>
+          <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800">
+            <i class="fa-brands fa-github text-xl"></i></a>
+        </div>
+
+        <button id="menuBtn" class="md:hidden text-gray-500 hover:text-indigo-600 transition-colors p-1" aria-label="菜单">
+          <i id="menuIcon" class="fa-solid fa-bars text-xl"></i>
+        </button>
+      </div>
+
+      <div id="mobileMenu" class="mobile-menu md:hidden">
+        <div class="backdrop-blur-xl bg-white/50 rounded-xl shadow-sm border border-white/60 mt-2 px-6 py-5 flex flex-col gap-4">
+          <a href="/" class="text-sm font-medium text-gray-500">首页</a>
+          <a href="/chat" class="text-sm font-bold text-indigo-600">聊天</a>
+          <a href="/blog" class="text-sm font-medium text-gray-500">博客</a>
+          <a href="/changelog" class="text-sm font-medium text-gray-500">日志</a>
+          <div class="flex gap-5 pt-3 border-t border-gray-200/40">
+            <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500">
+              <i class="fa-brands fa-bilibili text-xl"></i></a>
+            <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800">
+              <i class="fa-brands fa-github text-xl"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ====== 主体 ====== -->
+  <main class="pt-24 md:pt-32 pb-6 px-4 fade-in-up">
+    <div class="mx-auto max-w-6xl flex flex-col md:flex-row gap-6 md:gap-8">
+
+      <!-- 左侧：动漫角色 -->
+      <div class="hidden md:flex flex-shrink-0 flex-col items-center justify-center w-48 lg:w-64 animate-float">
+        <div class="w-40 h-40 lg:w-56 lg:h-56 rounded-full bg-gradient-to-br from-indigo-100 via-purple-100 to-pink-100 p-5 shadow-lg shadow-indigo-100/40 ring-4 ring-white/60">
+          <img src="/avatar_v2.png"
+               alt="角色" class="w-full h-full object-contain drop-shadow-md" loading="eager">
+        </div>
+        <p class="mt-3 text-xs text-gray-400 tracking-wide">Mutsumi · Online</p>
+      </div>
+
+      <!-- 右侧：聊天面板 -->
+      <div class="flex-1 backdrop-blur-xl bg-white/40 rounded-3xl shadow-lg border border-white/50 overflow-hidden">
+        <div class="chat-panel">
+
+          <!-- 消息展示区 -->
+          <div id="messagesArea" class="messages-area flex-1 px-4 md:px-8 py-5 space-y-4">
+            
+            <!-- 默认欢迎消息 -->
+            <div class="flex justify-start">
+              <div class="bubble bubble-ai">
+                你好，我是若叶睦。<br>有什么想聊的吗？
+              </div>
+            </div>
+
+          </div>
+
+          <!-- 输入区 -->
+          <div class="px-4 md:px-8 py-4 border-t border-white/40 bg-white/30 backdrop-blur-sm">
+            <div class="flex items-end gap-3">
+              <input id="chatInput" type="text"
+                class="chat-input flex-1 bg-white/70 backdrop-blur-sm border border-white/60 rounded-2xl px-4 py-3 text-sm md:text-base text-gray-700 placeholder-gray-400 focus:outline-none focus:border-indigo-300 transition-all"
+                placeholder="输入消息，按 Enter 发送..."
+                autocomplete="off">
+              <button id="sendBtn"
+                class="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-500 text-white rounded-full shadow-md shadow-indigo-200/50 hover:shadow-lg hover:from-indigo-600 hover:to-purple-600 active:scale-95 transition-all flex items-center justify-center">
+                <i class="fa-solid fa-paper-plane text-sm"></i>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ====== JavaScript ====== -->
+  <script>
+    // ===== 移动端菜单 =====
+    (function(){
+      var btn = document.getElementById('menuBtn');
+      var menu = document.getElementById('mobileMenu');
+      var icon = document.getElementById('menuIcon');
+      if(btn && menu){
+        btn.onclick = function(){
+          var open = menu.classList.toggle('open');
+          icon.className = open ? 'fa-solid fa-xmark text-xl' : 'fa-solid fa-bars text-xl';
+        };
+        var links = menu.querySelectorAll('a');
+        for(var i=0; i<links.length; i++){
+          links[i].onclick = function(){ menu.classList.remove('open'); icon.className='fa-solid fa-bars text-xl'; };
+        }
+      }
+    })();
+
+    // ===== 聊天核心 =====
+    var messagesArea = document.getElementById('messagesArea');
+    var chatInput   = document.getElementById('chatInput');
+    var sendBtn     = document.getElementById('sendBtn');
+    var isSending   = false;
+
+    function scrollBottom(){
+      if(messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
+    }
+
+    function addUserBubble(text){
+      var div = document.createElement('div');
+      div.className = 'flex justify-end';
+      var b = document.createElement('div');
+      b.className = 'bubble bubble-user';
+      b.textContent = text;
+      div.appendChild(b);
+      messagesArea.appendChild(div);
+      scrollBottom();
+    }
+
+    function createAiBubble(){
+      var div = document.createElement('div');
+      div.className = 'flex justify-start';
+      var b = document.createElement('div');
+      b.className = 'bubble bubble-ai';
+      div.appendChild(b);
+      messagesArea.appendChild(div);
+      return { wrapper: div, bubble: b };
+    }
+
+    function addLoading(){
+      var div = document.createElement('div');
+      div.className = 'flex justify-start';
+      div.id = 'loadingBubble';
+      var b = document.createElement('div');
+      b.className = 'bubble bubble-ai';
+      b.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+      div.appendChild(b);
+      messagesArea.appendChild(div);
+      scrollBottom();
+    }
+
+    function removeLoading(){
+      var el = document.getElementById('loadingBubble');
+      if(el) el.remove();
+    }
+
+    function addErrorBubble(text){
+      var div = document.createElement('div');
+      div.className = 'flex justify-center';
+      var b = document.createElement('div');
+      b.className = 'bubble bubble-system';
+      b.textContent = text;
+      div.appendChild(b);
+      messagesArea.appendChild(div);
+      scrollBottom();
+    }
+
+    // 从 SSE data JSON 中提取文本片段
+    function extractDelta(jsonObj){
+      // 直接字段
+      if (jsonObj.message) return jsonObj.message.toString();
+      if (jsonObj.text)    return jsonObj.text.toString();
+      if (jsonObj.content) return jsonObj.content.toString();
+      if (jsonObj.reply)   return jsonObj.reply.toString();
+      // OpenAI 兼容 delta
+      if (jsonObj.choices && jsonObj.choices[0]){
+        var c = jsonObj.choices[0];
+        if (c.delta && c.delta.content) return c.delta.content;
+        if (c.message && c.message.content) return c.message.content;
+        if (c.text) return c.text;
+      }
+      // data 包裹
+      if (jsonObj.data){
+        if (typeof jsonObj.data === 'string') return jsonObj.data;
+        return extractDelta(jsonObj.data);
+      }
+      return null;
+    }
+
+    // ===== 流式发送消息 =====
+    async function doSend(){
+      if(isSending) return;
+      var text = chatInput.value.trim();
+      if(!text) return;
+
+      isSending = true;
+      chatInput.disabled = true;
+      sendBtn.disabled = true;
+      chatInput.value = '';
+
+      addUserBubble(text);
+      addLoading();
+
+      try {
+        var response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            message: text,
+            username: 'web_guest',
+            enable_streaming: true
+          })
+        });
+
+        if(!response.ok) throw new Error('HTTP ' + response.status);
+
+        removeLoading();
+        var ai = createAiBubble();
+        var fullText = '';
+
+        // 流式读取 SSE
+        var reader = response.body.getReader();
+        var decoder = new TextDecoder('utf-8');
+        var buffer = '';
+
+        while(true){
+          var result = await reader.read();
+          if(result.done) break;
+
+          buffer += decoder.decode(result.value, {stream: true});
+          // 按行分割
+          var lines = buffer.split('\n');
+          // 最后一行可能不完整，保留
+          buffer = lines.pop() || '';
+
+          for(var i = 0; i < lines.length; i++){
+            var line = lines[i].trim();
+            if(!line.startsWith('data: ')) continue;
+            var jsonStr = line.substring(6); // 去掉 "data: "
+
+            // 跳过 [DONE] 标记
+            if(jsonStr === '[DONE]') continue;
+
+            try {
+              var jsonObj = JSON.parse(jsonStr);
+              var delta = extractDelta(jsonObj);
+              if(delta){
+                // 去重：如果delta包含之前全部文本，只取新增部分
+                if(delta.length > fullText.length && delta.indexOf(fullText) === 0){
+                  fullText = delta;
+                } else if(delta !== fullText){
+                  fullText += delta;
+                }
+                ai.bubble.textContent = fullText;
+                scrollBottom();
+              }
+            } catch(e){
+              // JSON 不完整，跳过
+              console.warn('[SSE] 跳过不完整片段:', jsonStr.substring(0,30));
+            }
+          }
+        }
+
+        // 流结束，如果气泡为空则显示提示
+        if(!fullText){
+          ai.bubble.textContent = '（空回复）';
+        }
+        console.log('[AstrBot] 完整回复:', fullText);
+
+      } catch(err){
+        removeLoading();
+        addErrorBubble('连接失败，请稍后再试');
+        console.error('[AstrBot] 错误:', err);
+      } finally {
+        isSending = false;
+        chatInput.disabled = false;
+        sendBtn.disabled = false;
+        chatInput.focus();
+        scrollBottom();
+      }
+    }
+
+    // ===== 事件绑定 =====
+    if(sendBtn) sendBtn.onclick = doSend;
+    if(chatInput){
+      chatInput.onkeydown = function(e){
+        if(e.key === 'Enter' && !e.shiftKey){
+          e.preventDefault();
+          doSend();
+        }
+      };
+    }
+    scrollBottom();
+  </script>
+
+</body>

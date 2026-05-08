@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>博客 · awaw_a</title>
+<link rel="icon" type="image/png" href="/favicon.png">
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Noto Sans SC',sans-serif;overflow-x:hidden}
+  .dot-bg{background-image:radial-gradient(#c7d2fe 1px,transparent 1px);background-size:32px 32px}
+
+  .nav-link{position:relative;transition:color .3s;cursor:pointer}
+  .nav-link::after{content:'';position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:0;height:2px;background:linear-gradient(90deg,#6366f1,#a855f7);border-radius:1px;transition:width .3s}
+  .nav-link:hover::after,.nav-link.active::after{width:70%}
+  .social-icon{transition:all .3s}
+  .social-icon:hover{transform:scale(1.2) translateY(-3px)}
+  .mobile-menu{max-height:0;overflow:hidden;transition:max-height .35s,opacity .35s;opacity:0}
+  .mobile-menu.open{max-height:280px;opacity:1}
+
+  .blog-card{transition:all .3s}
+  .blog-card:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(99,102,241,.12),0 2px 8px rgba(0,0,0,.04)}
+
+  @keyframes fadeInUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+  .fade-in-up{animation:fadeInUp .7s ease forwards}
+  .fade-in-up:nth-child(1){animation-delay:.05s}
+  .fade-in-up:nth-child(2){animation-delay:.2s}
+  .fade-in-up:nth-child(3){animation-delay:.35s}
+</style>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-indigo-50 via-purple-50/60 to-pink-50 dot-bg">
+
+  <!-- 导航栏 -->
+  <nav class="fixed top-0 left-0 right-0 z-50">
+    <div class="mx-auto max-w-6xl px-4 py-3 md:py-4">
+      <div class="backdrop-blur-xl bg-white/50 rounded-2xl shadow-sm border border-white/60 px-5 md:px-10 py-3 md:py-4 flex items-center justify-between">
+        <a href="/" class="text-xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">awaw_a</a>
+        <div class="hidden md:flex items-center gap-10">
+          <a href="/" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">首页</a>
+          <a href="/chat" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">聊天</a>
+          <a href="/blog" class="nav-link active text-sm font-bold text-indigo-600">博客</a>
+          <a href="/changelog" class="nav-link text-sm font-medium text-gray-500 hover:text-indigo-600">日志</a>
+        </div>
+        <div class="hidden md:flex items-center gap-5">
+          <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500"><i class="fa-brands fa-bilibili text-xl"></i></a>
+          <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800"><i class="fa-brands fa-github text-xl"></i></a>
+        </div>
+        <button id="menuBtn" class="md:hidden text-gray-500 hover:text-indigo-600 p-1"><i id="menuIcon" class="fa-solid fa-bars text-xl"></i></button>
+      </div>
+      <div id="mobileMenu" class="mobile-menu md:hidden">
+        <div class="backdrop-blur-xl bg-white/50 rounded-xl shadow-sm border border-white/60 mt-2 px-6 py-5 flex flex-col gap-4">
+          <a href="/" class="text-sm font-medium text-gray-500">首页</a>
+          <a href="/chat" class="text-sm font-medium text-gray-500">聊天</a>
+          <a href="/blog" class="text-sm font-bold text-indigo-600">博客</a>
+          <a href="/changelog" class="text-sm font-medium text-gray-500">日志</a>
+          <div class="flex gap-5 pt-3 border-t border-gray-200/40">
+            <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-blue-500"><i class="fa-brands fa-bilibili text-xl"></i></a>
+            <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon text-gray-400 hover:text-gray-800"><i class="fa-brands fa-github text-xl"></i></a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero -->
+  <section class="pt-32 md:pt-40 pb-6 text-center">
+    <h1 class="text-3xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 pb-2">我的博客</h1>
+    <p class="text-gray-400 text-sm md:text-lg mt-3 tracking-wide">一些零碎的想法，和不肯放下的热爱。</p>
+    <div class="mx-auto mt-5 w-16 h-1 rounded-full bg-gradient-to-r from-indigo-400 to-purple-400 opacity-60"></div>
+  </section>
+
+  <!-- 文章列表 -->
+  <section class="pb-20 px-4">
+    <div class="mx-auto max-w-3xl space-y-6">
+
+      <!-- 文章 1 -->
+      <a href="/article?id=hello-world" class="block fade-in-up">
+        <div class="blog-card backdrop-blur-md bg-white/80 rounded-2xl shadow-sm border border-white/60 p-6 md:p-7">
+          <div class="flex items-center gap-3 mb-3">
+            <span class="text-xs text-gray-400 font-mono">2026-05-09</span>
+            <span class="text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded-full border border-blue-100">网站</span>
+            <span class="text-xs bg-purple-50 text-purple-600 px-2 py-0.5 rounded-full border border-purple-100">随笔</span>
+          </div>
+          <h2 class="text-lg md:text-xl font-bold text-gray-800 mb-2">Hello World!</h2>
+          <p class="text-sm text-gray-500 leading-relaxed line-clamp-2">Hello World!</p>
+          <div class="mt-4 text-xs text-indigo-400 font-medium">阅读全文 →</div>
+        </div>
+      </a>
+
+    </div>
+  </section>
+
+  <script>
+    var b=document.getElementById('menuBtn'),m=document.getElementById('mobileMenu'),i=document.getElementById('menuIcon');
+    b.onclick=function(){var o=m.classList.toggle('open');i.className=o?'fa-solid fa-xmark text-xl':'fa-solid fa-bars text-xl'};
+    m.querySelectorAll('a').forEach(function(l){l.onclick=function(){m.classList.remove('open');i.className='fa-solid fa-bars text-xl'}});
+  </script>
+</body>
+</html>
