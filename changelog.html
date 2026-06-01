@@ -214,6 +214,7 @@
   .fade-in-up { animation: fadeInUp 0.7s ease forwards; }
   .fade-in-up:nth-child(1) { animation-delay: 0.1s; }
   .fade-in-up:nth-child(2) { animation-delay: 0.25s; }
+  .fade-in-up:nth-child(3) { animation-delay: 0.4s; }
 </style>
 </head>
 <body>
@@ -288,6 +289,44 @@
       <!-- 垂直引导线（桌面端居中，移动端靠左） -->
       <div class="timeline-line hidden md:block left-1/2 -translate-x-px"></div>
       <div class="timeline-line md:hidden left-4"></div>
+
+      <!-- ====== 更新卡片: v1.2.0 ====== -->
+      <div class="relative mb-10 md:mb-16 fade-in-up">
+        <div class="timeline-dot hidden md:block left-1/2 -translate-x-1/2 top-6"></div>
+        <div class="timeline-dot md:hidden left-1 top-6"></div>
+
+        <div class="md:w-[46%] md:ml-[54%] ml-10 md:ml-0">
+          <div class="log-card rounded-2xl p-5 md:p-7">
+
+            <div class="flex items-center gap-3 mb-4">
+              <span class="date-text text-xs tracking-wide">2026-06-02</span>
+              <span class="version-pill text-xs font-bold px-2.5 py-0.5 rounded-full">v1.2.0</span>
+            </div>
+
+            <div class="flex flex-wrap gap-2 mb-4">
+              <span class="tag tag-leaf">视觉改版</span>
+              <span class="tag tag-tomato">首页</span>
+              <span class="tag tag-amber">统一风格</span>
+            </div>
+
+            <h3 class="log-title text-sm md:text-base font-bold mb-3">前端视觉系统重做</h3>
+            <ul class="log-list space-y-2 text-sm md:text-base leading-relaxed">
+              <li class="flex items-start gap-2">
+                <span class="list-arrow mt-1 text-xs">▸</span>
+                <span>全站主要页面改为暖白纸面、若叶绿、番茄红与琥珀色组成的新视觉风格</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="list-arrow mt-1 text-xs">▸</span>
+                <span>首页从单屏名片扩展为小站入口，新增入口、最近文章、项目列表和页脚签名</span>
+              </li>
+              <li class="flex items-start gap-2">
+                <span class="list-arrow mt-1 text-xs">▸</span>
+                <span>统一导航链接为无后缀路径，并保留 Bilibili 图标默认灰绿、悬停高亮为品牌蓝</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
       <!-- ====== 更新卡片: v1.1.0 ====== -->
       <div class="relative mb-10 md:mb-16 fade-in-up">

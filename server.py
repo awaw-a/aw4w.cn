@@ -5,11 +5,13 @@ import json
 import os
 import urllib.request
 import urllib.error
+import urllib.parse
 
-STATIC_DIR = "/www/wwwroot/hello_site"
-PROXY_URL = "http://127.0.0.1:6185/api/v1/chat"
-HOST = "0.0.0.0"
-PORT = 31058
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.environ.get("STATIC_DIR", BASE_DIR)
+PROXY_URL = os.environ.get("PROXY_URL", "http://127.0.0.1:6185/api/v1/chat")
+HOST = os.environ.get("HOST", "0.0.0.0")
+PORT = int(os.environ.get("PORT", "31058"))
 
 def mock_reply(user_text):
     """模拟回复"""
@@ -27,9 +29,35 @@ def mock_reply(user_text):
             return val
     return f"收到。「{user_text[:20]}」\n…不知道该怎么回复。\n换个话题？"
 
+def extract_user_text(data):
+    """兼容网页请求和 OpenAI messages 请求格式"""
+    if not isinstance(data, dict):
+        return ""
+
+    message = data.get("message")
+    if isinstance(message, str):
+        return message
+
+    messages = data.get("messages") or []
+    if messages and isinstance(messages[-1], dict):
+        content = messages[-1].get("content", "")
+        if isinstance(content, str):
+            return content
+    return ""
+
 class ProxyHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC_DIR, **kwargs)
+
+    def translate_path(self, path):
+        parsed = urllib.parse.urlsplit(path)
+        route = parsed.path.rstrip("/")
+        if route and not os.path.splitext(route)[1]:
+            candidate = route + ".html"
+            candidate_path = super().translate_path(candidate)
+            if os.path.isfile(candidate_path):
+                path = candidate
+        return super().translate_path(path)
 
     def do_POST(self):
         if self.path == "/api/chat":
@@ -38,9 +66,10 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
 
             # 解析用户消息
             user_text = ""
+            data = {}
             try:
                 data = json.loads(body)
-                user_text = data.get("messages", [{}])[-1].get("content", "")
+                user_text = extract_user_text(data)
             except:
                 pass
 
@@ -77,15 +106,28 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             if not reply:
                 reply = mock_reply(user_text)
 
-            resp_data = json.dumps({
-                "choices": [{"message": {"content": reply}}]
-            }, ensure_ascii=False)
+            if data.get("enable_streaming"):
+                chunk = json.dumps({
+                    "choices": [{"delta": {"content": reply}}]
+                }, ensure_ascii=False)
 
-            self.send_response(200)
-            self.send_header("Content-Type", "application/json")
-            self.send_header("Access-Control-Allow-Origin", "*")
-            self.end_headers()
-            self.wfile.write(resp_data.encode("utf-8"))
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(f"data: {chunk}\n\n".encode("utf-8"))
+                self.wfile.write(b"data: [DONE]\n\n")
+            else:
+                resp_data = json.dumps({
+                    "choices": [{"message": {"content": reply}}]
+                }, ensure_ascii=False)
+
+                self.send_response(200)
+                self.send_header("Content-Type", "application/json")
+                self.send_header("Access-Control-Allow-Origin", "*")
+                self.end_headers()
+                self.wfile.write(resp_data.encode("utf-8"))
         else:
             self.send_response(404)
             self.end_headers()
@@ -98,6 +140,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
 
 if __name__ == "__main__":
+    if not os.path.isdir(STATIC_DIR):
+        raise SystemExit(f"STATIC_DIR 不存在: {STATIC_DIR}")
     os.chdir(STATIC_DIR)
     server = http.server.HTTPServer((HOST, PORT), ProxyHandler)
     print(f"服务: http://{HOST}:{PORT}")

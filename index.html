@@ -9,7 +9,7 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=JetBrains+Mono:wght@400;500&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;500&display=swap');
 
   :root {
     --paper: #f7f4ea;
@@ -25,7 +25,9 @@
   }
 
   * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
   body {
+    min-height: 100vh;
     font-family: 'Noto Sans SC', sans-serif;
     overflow-x: hidden;
     color: var(--ink);
@@ -122,22 +124,29 @@
     box-shadow: 0 18px 42px rgba(38,49,38,0.08);
   }
   .mobile-panel a,
-  .mobile-panel span {
-    color: var(--muted);
-  }
+  .mobile-panel span { color: var(--muted); }
   .mobile-panel .active-mobile,
-  .mobile-panel a:hover {
-    color: var(--leaf-dark);
-  }
+  .mobile-panel a:hover { color: var(--leaf-dark); }
 
   .home-main {
-    min-height: 100vh;
     position: relative;
+    z-index: 1;
   }
 
-  .kicker {
-    color: var(--tomato);
+  .hero-section {
+    min-height: calc(100vh - 4.5rem);
+    padding-top: 7.25rem;
+    padding-bottom: 3rem;
+  }
+
+  .kicker,
+  .section-kicker,
+  .mono {
     font-family: 'JetBrains Mono', monospace;
+  }
+  .kicker,
+  .section-kicker {
+    color: var(--tomato);
     font-weight: 500;
   }
 
@@ -162,9 +171,12 @@
     border-radius: 999px;
   }
 
-  .hero-subtitle { color: #73776c; }
+  .hero-subtitle,
+  .muted-text { color: var(--muted); }
 
-  .status-chip {
+  .status-chip,
+  .mini-stat,
+  .paper-chip {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -182,6 +194,39 @@
   }
   .chip-guitar { color: var(--tomato); }
   .chip-seedling { color: var(--leaf); }
+
+  .action-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    min-height: 2.75rem;
+    border-radius: 999px;
+    padding: 0.75rem 1.1rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, color 0.2s ease, background 0.2s ease;
+  }
+  .action-button.primary {
+    background: var(--leaf-dark);
+    color: #fffdf7;
+    box-shadow: 0 12px 26px rgba(51,73,45,0.2);
+  }
+  .action-button.primary:hover {
+    background: var(--tomato);
+    box-shadow: 0 14px 30px rgba(200,107,83,0.2);
+    transform: translateY(-2px);
+  }
+  .action-button.secondary {
+    color: var(--leaf-dark);
+    background: rgba(255,253,247,0.78);
+    border: 1px solid rgba(88,116,71,0.18);
+    box-shadow: 0 10px 24px rgba(38,49,38,0.08);
+  }
+  .action-button.secondary:hover {
+    color: var(--tomato);
+    transform: translateY(-2px);
+  }
 
   .portrait-wrap {
     position: relative;
@@ -244,6 +289,118 @@
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0; }
   }
+
+  .section-title {
+    color: var(--ink);
+    letter-spacing: 0;
+  }
+  .title-mark {
+    width: 3.25rem;
+    height: 0.22rem;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--leaf), var(--tomato));
+    opacity: 0.72;
+  }
+
+  .home-card {
+    background: rgba(255,253,247,0.82);
+    border: 1px solid rgba(88,116,71,0.16);
+    box-shadow: 0 12px 34px rgba(38,49,38,0.08);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+  }
+  .home-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(88,116,71,0.32);
+    box-shadow: 0 18px 48px rgba(38,49,38,0.13);
+  }
+  .card-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.35rem;
+    height: 2.35rem;
+    border-radius: 999px;
+    color: var(--leaf-dark);
+    background: rgba(145,173,119,0.18);
+    border: 1px solid rgba(88,116,71,0.16);
+  }
+  .card-icon.tomato {
+    color: #9b4a39;
+    background: rgba(200,107,83,0.12);
+    border-color: rgba(200,107,83,0.18);
+  }
+  .card-icon.amber {
+    color: #80612a;
+    background: rgba(209,161,75,0.16);
+    border-color: rgba(209,161,75,0.24);
+  }
+  .link-arrow {
+    color: var(--leaf);
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  .home-card:hover .link-arrow {
+    color: var(--tomato);
+    transform: translateX(2px);
+  }
+
+  .tag {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid transparent;
+    padding: 0.125rem 0.55rem;
+    font-size: 0.75rem;
+  }
+  .tag-leaf {
+    color: var(--leaf-dark);
+    background: rgba(145,173,119,0.18);
+    border-color: rgba(88,116,71,0.16);
+  }
+  .tag-tomato {
+    color: #9b4a39;
+    background: rgba(200,107,83,0.12);
+    border-color: rgba(200,107,83,0.18);
+  }
+  .tag-amber {
+    color: #80612a;
+    background: rgba(209,161,75,0.16);
+    border-color: rgba(209,161,75,0.24);
+  }
+  .tag-neutral {
+    color: #62685d;
+    background: rgba(222,216,201,0.42);
+    border-color: rgba(104,114,96,0.12);
+  }
+
+  .project-row {
+    border-bottom: 1px solid rgba(88,116,71,0.12);
+  }
+  .project-row:last-child { border-bottom: 0; }
+  .project-link {
+    color: var(--leaf);
+    transition: color 0.2s ease;
+  }
+  .project-link:hover { color: var(--tomato); }
+
+  .site-footer {
+    color: var(--muted);
+    border-top: 1px solid rgba(88,116,71,0.16);
+  }
+
+  @media (max-width: 767px) {
+    .hero-section {
+      min-height: auto;
+      padding-top: 7rem;
+      padding-bottom: 2.5rem;
+    }
+    .action-button {
+      width: 100%;
+    }
+    .chat-bubble {
+      min-width: 8rem;
+      padding: 0.82rem 1rem;
+    }
+  }
 </style>
 </head>
 <body>
@@ -299,65 +456,279 @@
     </div>
   </nav>
 
-  <!-- ====== Hero 区域 ====== -->
-  <main class="home-main flex items-center justify-center px-4 md:px-8 pt-24 md:pt-0">
+  <main class="home-main">
+    <!-- ====== Hero 区域 ====== -->
+    <section class="hero-section flex items-center justify-center px-4 md:px-8">
+      <div class="w-full max-w-6xl">
+        <div class="grid items-center gap-10 md:grid-cols-[1fr_auto]">
 
-    <!-- 桌面端: 左右flex布局；移动端: 堆叠 -->
-    <div class="w-full max-w-6xl flex flex-col md:flex-row items-center justify-between gap-10 md:gap-0">
+          <!-- 左侧文字区 -->
+          <div class="flex flex-col items-center md:items-start gap-5 md:gap-7 fade-in-up">
 
-      <!-- 左侧文字区 -->
-      <div class="flex flex-col items-center md:items-start gap-5 md:gap-7 fade-in-up z-20 md:flex-1">
+            <!-- 标题 -->
+            <div class="text-center md:text-left">
+              <p class="kicker text-xs md:text-sm mb-3">AWAW_A PERSONAL SITE</p>
+              <h1 class="hero-title text-4xl md:text-7xl font-black leading-tight">
+                若叶<span class="leaf-name">睦</span>
+              </h1>
+              <p class="hero-subtitle text-sm md:text-lg mt-3 md:mt-4">
+                guitarist · 月之森女子学园 · Ave Mujica
+              </p>
+            </div>
 
-        <!-- 标题 -->
-        <div class="text-center md:text-left">
-          <p class="kicker text-xs md:text-sm mb-3">WELCOME TO MY SPACE</p>
-          <h1 class="hero-title text-3xl md:text-6xl font-bold leading-tight whitespace-nowrap">
-            若叶<span class="leaf-name">睦</span>
-          </h1>
-          <p class="hero-subtitle text-sm md:text-lg mt-3 md:mt-4 whitespace-nowrap">
-            guitarist · 月之森女子学园 · Ave Mujica
-          </p>
+            <!-- 状态标签 -->
+            <div class="flex flex-wrap justify-center md:justify-start gap-2 md:gap-3">
+              <span class="status-chip rounded-full px-3 py-1.5 md:px-5 md:py-2.5 text-xs">
+                <span class="status-dot"></span>
+                在线
+              </span>
+              <span class="status-chip rounded-full px-3 py-1.5 md:px-5 md:py-2.5 text-xs">
+                <i class="fa-solid fa-guitar chip-guitar"></i>
+                吉他手
+              </span>
+              <span class="status-chip rounded-full px-3 py-1.5 md:px-5 md:py-2.5 text-xs">
+                <i class="fa-solid fa-seedling chip-seedling"></i>
+                黄瓜种植
+              </span>
+            </div>
+
+            <div class="grid w-full max-w-md gap-3 sm:grid-cols-2 md:max-w-none">
+              <a href="/chat" class="action-button primary">
+                <i class="fa-solid fa-comment"></i>
+                开始聊天
+              </a>
+              <a href="/blog" class="action-button secondary">
+                <i class="fa-solid fa-book-open"></i>
+                查看文章
+              </a>
+            </div>
+          </div>
+
+          <!-- 右侧: 动漫角色 + 气泡 -->
+          <div class="portrait-wrap relative mx-auto flex-shrink-0 animate-float">
+            <div class="portrait-frame w-48 h-48 md:w-80 md:h-80 rounded-full p-5 md:p-8">
+              <img
+                src="/avatar_v2.png"
+                alt="动漫角色"
+                class="w-full h-full object-contain"
+                loading="eager"
+              >
+            </div>
+
+            <div class="absolute -top-3 md:-top-4 -right-6 md:-right-12 lg:-right-20 z-30 animate-float" style="animation-delay: 0.5s;">
+              <div class="chat-bubble">
+                <span id="typewriter" class="text-sm md:text-base" style="font-family:'JetBrains Mono',monospace;color:var(--ink);"></span>
+                <span class="typing-cursor" id="cursor"></span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <!-- 状态标签 -->
-        <div class="flex flex-wrap justify-center md:justify-start gap-2 md:gap-3">
-          <span class="status-chip rounded-full px-3 py-1.5 md:px-5 md:py-2.5 text-xs">
-            <span class="status-dot"></span>
-            在线
-          </span>
-          <span class="status-chip rounded-full px-3 py-1.5 md:px-5 md:py-2.5 text-xs">
-            <i class="fa-solid fa-guitar chip-guitar"></i>
-            吉他手
-          </span>
-          <span class="status-chip rounded-full px-3 py-1.5 md:px-5 md:py-2.5 text-xs">
-            <i class="fa-solid fa-seedling chip-seedling"></i>
-            黄瓜种植
-          </span>
-        </div>
-      </div>
-
-      <!-- 右侧: 动漫角色 + 气泡 -->
-      <div class="portrait-wrap relative flex-shrink-0 animate-float z-10 md:ml-12">
-        <div class="portrait-frame w-44 h-44 md:w-80 md:h-80 rounded-full p-5 md:p-8">
-          <img
-            src="/avatar_v2.png"
-            alt="动漫角色"
-            class="w-full h-full object-contain"
-            loading="eager"
-          >
-        </div>
-
-        <!-- 聊天气泡 - 绝对定位在角色右上方 -->
-        <div class="absolute -top-3 md:-top-4 -right-7 md:-right-12 lg:-right-20 z-30 animate-float" style="animation-delay: 0.5s;">
-          <div class="chat-bubble">
-            <span id="typewriter" class="text-sm md:text-base" style="font-family:'JetBrains Mono',monospace;color:var(--ink);"></span>
-            <span class="typing-cursor" id="cursor"></span>
+        <div class="mt-10 grid gap-3 sm:grid-cols-3">
+          <div class="mini-stat rounded-2xl px-4 py-3">
+            <i class="fa-solid fa-pen-nib chip-seedling"></i>
+            <span class="mono text-xs">5 posts</span>
+          </div>
+          <div class="mini-stat rounded-2xl px-4 py-3">
+            <i class="fa-solid fa-code-branch chip-guitar"></i>
+            <span class="mono text-xs">4 projects</span>
+          </div>
+          <div class="mini-stat rounded-2xl px-4 py-3">
+            <i class="fa-solid fa-clock chip-seedling"></i>
+            <span class="mono text-xs">updated 2026-06-01</span>
           </div>
         </div>
       </div>
+    </section>
 
-    </div>
+    <!-- ====== 主要入口 ====== -->
+    <section class="px-4 pt-8 pb-16 md:pt-10 md:pb-20">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-7">
+          <p class="section-kicker text-xs mb-2">MAIN ENTRANCES</p>
+          <h2 class="section-title text-2xl md:text-4xl font-black">入口</h2>
+          <div class="title-mark mt-4"></div>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <a href="/chat" class="home-card rounded-2xl p-6">
+            <span class="card-icon"><i class="fa-solid fa-comments"></i></span>
+            <h3 class="mt-5 text-lg font-bold">聊天</h3>
+            <p class="muted-text mt-2 text-sm leading-relaxed">和若叶睦说几句话，试试这个小站的对话入口。</p>
+            <span class="link-arrow mt-5 inline-flex items-center gap-2 text-sm font-bold">
+              进入
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+          </a>
+
+          <a href="/blog" class="home-card rounded-2xl p-6">
+            <span class="card-icon tomato"><i class="fa-solid fa-book-open"></i></span>
+            <h3 class="mt-5 text-lg font-bold">博客</h3>
+            <p class="muted-text mt-2 text-sm leading-relaxed">文章、插件、Demo 和一些不肯放下的小想法。</p>
+            <span class="link-arrow mt-5 inline-flex items-center gap-2 text-sm font-bold">
+              阅读
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+          </a>
+
+          <a href="/changelog" class="home-card rounded-2xl p-6">
+            <span class="card-icon amber"><i class="fa-solid fa-timeline"></i></span>
+            <h3 class="mt-5 text-lg font-bold">日志</h3>
+            <p class="muted-text mt-2 text-sm leading-relaxed">记录这个站每次变得更顺眼、更好用的过程。</p>
+            <span class="link-arrow mt-5 inline-flex items-center gap-2 text-sm font-bold">
+              查看
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 最新文章 ====== -->
+    <section class="px-4 pb-16 md:pb-20">
+      <div class="mx-auto max-w-6xl">
+        <div class="mb-7 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p class="section-kicker text-xs mb-2">LATEST NOTES</p>
+            <h2 class="section-title text-2xl md:text-4xl font-black">最近写了</h2>
+            <div class="title-mark mt-4"></div>
+          </div>
+          <a href="/blog" class="project-link inline-flex items-center gap-2 text-sm font-bold">
+            全部文章
+            <i class="fa-solid fa-arrow-right text-xs"></i>
+          </a>
+        </div>
+
+        <div class="grid gap-4 md:grid-cols-3">
+          <a href="/article?id=astrbot-plugin-jmcomic" class="home-card rounded-2xl p-6">
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <span class="tag tag-leaf">AstrBot</span>
+              <span class="tag tag-amber">JMComic</span>
+            </div>
+            <p class="mono muted-text text-xs mb-3">2026-06-01</p>
+            <h3 class="text-lg font-bold leading-snug">astrbot_plugin_jmcomic</h3>
+            <p class="muted-text mt-3 text-sm leading-relaxed">聊天中查询、搜索和后台下载 JMComic 内容。</p>
+            <span class="link-arrow mt-5 inline-flex items-center gap-2 text-sm font-bold">
+              阅读
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+          </a>
+
+          <a href="/article?id=tts-video" class="home-card rounded-2xl p-6">
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <span class="tag tag-tomato">视频</span>
+              <span class="tag tag-amber">开源</span>
+            </div>
+            <p class="mono muted-text text-xs mb-3">2026-05-27</p>
+            <h3 class="text-lg font-bold leading-snug">tts-video</h3>
+            <p class="muted-text mt-3 text-sm leading-relaxed">上传图片、参考音频和文案，生成带字幕的口播 MP4。</p>
+            <span class="link-arrow mt-5 inline-flex items-center gap-2 text-sm font-bold">
+              阅读
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+          </a>
+
+          <a href="/article?id=astrbot-meme-stealing-plugin" class="home-card rounded-2xl p-6">
+            <div class="flex flex-wrap items-center gap-2 mb-4">
+              <span class="tag tag-leaf">AstrBot</span>
+              <span class="tag tag-tomato">表情包</span>
+            </div>
+            <p class="mono muted-text text-xs mb-3">2026-05-23</p>
+            <h3 class="text-lg font-bold leading-snug">meme_stealing</h3>
+            <p class="muted-text mt-3 text-sm leading-relaxed">采集、标注和管理群聊表情包，让 bot 更会接话。</p>
+            <span class="link-arrow mt-5 inline-flex items-center gap-2 text-sm font-bold">
+              阅读
+              <i class="fa-solid fa-arrow-right text-xs"></i>
+            </span>
+          </a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====== 项目列表 ====== -->
+    <section class="px-4 pb-16 md:pb-20">
+      <div class="mx-auto max-w-6xl">
+        <div class="grid gap-8 md:grid-cols-[0.85fr_1.15fr] md:items-start">
+          <div>
+            <p class="section-kicker text-xs mb-2">SMALL BUILDS</p>
+            <h2 class="section-title text-2xl md:text-4xl font-black">做过的小东西</h2>
+            <div class="title-mark mt-4"></div>
+            <p class="muted-text mt-5 text-sm md:text-base leading-relaxed">
+              主要是 AstrBot 插件和一些轻量 Web Demo。慢慢写，慢慢补。
+            </p>
+          </div>
+
+          <div class="home-card rounded-2xl p-2 md:p-3">
+            <div class="project-row px-4 py-4 md:px-5">
+              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 class="font-bold">astrbot_plugin_compare</h3>
+                  <p class="muted-text mt-1 text-sm">基于 LLM 的事物对比插件。</p>
+                </div>
+                <a href="/article?id=astrbot-compare-plugin" class="project-link inline-flex items-center gap-2 text-sm font-bold">
+                  文章
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="project-row px-4 py-4 md:px-5">
+              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 class="font-bold">astrbot_plugin_meme_stealing</h3>
+                  <p class="muted-text mt-1 text-sm">群聊表情包采集、标注与自动回复。</p>
+                </div>
+                <a href="/article?id=astrbot-meme-stealing-plugin" class="project-link inline-flex items-center gap-2 text-sm font-bold">
+                  文章
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="project-row px-4 py-4 md:px-5">
+              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 class="font-bold">tts-video</h3>
+                  <p class="muted-text mt-1 text-sm">静态角色口播视频生成器 Demo。</p>
+                </div>
+                <a href="/article?id=tts-video" class="project-link inline-flex items-center gap-2 text-sm font-bold">
+                  文章
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+            </div>
+
+            <div class="project-row px-4 py-4 md:px-5">
+              <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h3 class="font-bold">astrbot_plugin_jmcomic</h3>
+                  <p class="muted-text mt-1 text-sm">聊天中查询、搜索和后台下载内容。</p>
+                </div>
+                <a href="/article?id=astrbot-plugin-jmcomic" class="project-link inline-flex items-center gap-2 text-sm font-bold">
+                  文章
+                  <i class="fa-solid fa-arrow-right text-xs"></i>
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </main>
+
+  <footer class="site-footer px-4 py-8">
+    <div class="mx-auto max-w-6xl flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <p class="mono text-xs">awaw_a · 2026</p>
+      <div class="flex items-center gap-5">
+        <a href="https://space.bilibili.com/1605536939?spm_id_from=333.788.0.0" target="_blank" rel="noopener" class="social-icon bilibili" aria-label="Bilibili">
+          <i class="fa-brands fa-bilibili text-xl"></i>
+        </a>
+        <a href="https://github.com/awaw-a" target="_blank" rel="noopener" class="social-icon github" aria-label="GitHub">
+          <i class="fa-brands fa-github text-xl"></i>
+        </a>
+      </div>
+    </div>
+  </footer>
 
   <!-- ====== 脚本 ====== -->
   <script>
@@ -394,18 +765,10 @@
         : 'fa-solid fa-bars text-xl';
     });
 
-    mobileMenu.querySelectorAll('span, a').forEach(el => {
+    mobileMenu.querySelectorAll('a').forEach(el => {
       el.addEventListener('click', () => {
         mobileMenu.classList.remove('open');
         menuIcon.className = 'fa-solid fa-bars text-xl';
-      });
-    });
-
-    // 导航栏激活切换
-    document.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', () => {
-        document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-        link.classList.add('active');
       });
     });
   </script>
