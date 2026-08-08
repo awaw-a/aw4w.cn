@@ -28,6 +28,11 @@ def clean_token(value, default=""):
         return v
     return default
 
+def clean_text(value, maxlen=128):
+    """清洗透传到 AstrBot 的可选字符串字段（config_id 等）"""
+    v = (value or "").strip()[:maxlen]
+    return "".join(ch for ch in v if ch.isprintable())
+
 ATTACH_TYPES = {"image", "record", "file", "video"}
 
 def clean_attachments(raw):
@@ -195,6 +200,12 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json(payload or {"status": "error", "data": {"messages": []}})
             return
 
+        if path == "/api/chat/configs":
+            # 可选择的配置列表 -> AstrBot GET /api/v1/chat/configs
+            payload = self._proxy_json("GET", f"{ASTRBOT_BASE}/chat/configs")
+            self._send_json(payload or {"status": "error", "data": {"configs": []}})
+            return
+
         # 附件内容 -> AstrBot GET /api/v1/files/{attachment_id}/content
         m_file = re.fullmatch(r"/api/chat/file/([A-Za-z0-9_\-]{1,64})/content", path)
         if m_file:
@@ -230,7 +241,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-    def _open_astrbot(self, message, streaming, username="web_guest", session_id=""):
+    def _open_astrbot(self, message, streaming, username="web_guest", session_id="", extra=None):
         """发起 AstrBot 请求，message 为字符串或消息段数组，返回 HTTPResponse（调用方负责关闭）"""
         payload = {
             "message": message,
@@ -239,6 +250,8 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         }
         if session_id:
             payload["session_id"] = session_id
+        if extra:
+            payload.update(extra)
         astrbot_body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         req = urllib.request.Request(
             PROXY_URL,
@@ -248,10 +261,10 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         )
         return urllib.request.urlopen(req, timeout=60)
 
-    def _fetch_reply(self, message, username="web_guest", session_id=""):
+    def _fetch_reply(self, message, username="web_guest", session_id="", extra=None):
         """非流式获取完整回复，失败返回 None"""
         try:
-            with self._open_astrbot(message, False, username, session_id) as resp:
+            with self._open_astrbot(message, False, username, session_id, extra) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
                 return _parse_astrbot_response(raw)
         except Exception as e:
@@ -274,12 +287,12 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(f"data: {chunk}\n\n".encode("utf-8"))
         self.wfile.flush()
 
-    def _chat_stream(self, message, username="web_guest", session_id="", fallback_text=""):
+    def _chat_stream(self, message, username="web_guest", session_id="", fallback_text="", extra=None):
         """流式：优先实时透传 AstrBot SSE，失败则整段回复，再失败模拟兜底"""
         upstream = None
         fallback_reply = None
         try:
-            upstream = self._open_astrbot(message, True, username, session_id)
+            upstream = self._open_astrbot(message, True, username, session_id, extra)
             ctype = upstream.headers.get("Content-Type", "")
             if "event-stream" not in ctype:
                 # 上游未返回 SSE：按普通响应解析后走整段下发
@@ -305,7 +318,7 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                     upstream.close()
             else:
                 if not fallback_reply:
-                    fallback_reply = self._fetch_reply(message, username, session_id)
+                    fallback_reply = self._fetch_reply(message, username, session_id, extra)
                 if not fallback_reply:
                     fallback_reply = mock_reply(fallback_text or "[附件]")
                 self._write_sse_chunk(fallback_reply)
@@ -314,9 +327,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         except (BrokenPipeError, ConnectionResetError):
             pass  # 客户端提前断开
 
-    def _chat_plain(self, message, username="web_guest", session_id="", fallback_text=""):
+    def _chat_plain(self, message, username="web_guest", session_id="", fallback_text="", extra=None):
         """非流式：AstrBot 优先，模拟兜底"""
-        reply = self._fetch_reply(message, username, session_id)
+        reply = self._fetch_reply(message, username, session_id, extra)
         if not reply:
             reply = mock_reply(fallback_text or "[附件]")
         resp_data = json.dumps({
@@ -371,6 +384,13 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             username = clean_token(data.get("username"), "web_guest")
             session_id = clean_token(data.get("session_id"))
 
+            # 可选：配置 / 模型切换（ChatRequest: config_id / selected_provider / selected_model）
+            extra = {}
+            for k in ("config_id", "config_name", "selected_provider", "selected_model"):
+                v = clean_text(data.get(k))
+                if v:
+                    extra[k] = v
+
             # 附件：组装 AstrBot 消息段（plain + image/file/record/video）
             attachments = clean_attachments(data.get("attachments"))
             if attachments:
@@ -379,9 +399,9 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                 message = user_text
 
             if data.get("enable_streaming"):
-                self._chat_stream(message, username, session_id, user_text)
+                self._chat_stream(message, username, session_id, user_text, extra)
             else:
-                self._chat_plain(message, username, session_id, user_text)
+                self._chat_plain(message, username, session_id, user_text, extra)
         else:
             self.send_response(404)
             self.end_headers()

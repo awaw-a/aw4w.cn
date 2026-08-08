@@ -123,11 +123,14 @@ POST /api/chat
 GET    /api/chat/sessions?username=...   # 会话列表
 GET    /api/chat/history?session_id=...  # 会话历史
 DELETE /api/chat/sessions/{session_id}   # 删除会话
+GET    /api/chat/configs                 # 可切换的配置列表（聊天页右上角下拉）
 POST   /api/chat/file                    # 上传附件（multipart，≤25MB）
 GET    /api/chat/file/{id}/content       # 获取附件内容（用于气泡内显示图片/下载文件）
 ```
 
-发送附件时前端会在 `POST /api/chat` 请求体中带上 `attachments: [{type, attachment_id}]`，`server.py` 会组装成 AstrBot 消息段（`plain` + `image`/`file`/`record`/`video`）。
+发送附件时前端会在 `POST /api/chat` 请求体中带上 `attachments: [{type, attachment_id}]`，`server.py` 会组装成 AstrBot 消息段（`plain` + `image`/`file`/`record`/`video`）。选择配置时会带上 `config_id`（也支持 `selected_provider` / `selected_model` 透传）。
+
+> 注：经核对 AstrBot 官方 OpenAPI 规格，`POST /api/v1/chat` 不支持按请求指定人格（persona），人格绑定仅 WebUI 内部可用，因此聊天页提供的是配置切换而非人格切换。
 
 前端为每个访客在 localStorage 生成稳定的 `web_<uuid>` 用户名，不同访客的会话相互隔离；消息同时缓存在浏览器本地，AstrBot 不可用时也能恢复显示。
 
