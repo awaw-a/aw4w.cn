@@ -367,6 +367,9 @@
         if(!resp.ok) throw new Error('Not found');
         var md = await resp.text();
 
+        // 剥离文件顶部的 front matter（--- ... ---），避免渲染到正文
+        md = md.replace(/^\uFEFF?---\s*\n[\s\S]*?\n---\s*\n?/, '');
+
         // 解析 Markdown
         var html = marked.parse(md);
 

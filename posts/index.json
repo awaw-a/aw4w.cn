@@ -1,0 +1,58 @@
+{
+  "posts": [
+    {
+      "id": "astrbot-plugin-jmcomic",
+      "title": "AstrBot 插件：astrbot_plugin_jmcomic",
+      "date": "2026-06-01",
+      "tags": [
+        "AstrBot",
+        "插件",
+        "JMComic"
+      ],
+      "excerpt": "astrbot_plugin_jmcomic 是我最近写的 AstrBot 插件，基于 JMComic-Crawler-Python，可以在聊天里查询、搜索和下载 JMComic 内容。"
+    },
+    {
+      "id": "tts-video",
+      "title": "tts-video：蓝底小视频一键生成器 Demo",
+      "date": "2026-05-27",
+      "tags": [
+        "TTS",
+        "视频",
+        "开源"
+      ],
+      "excerpt": "tts-video 是我最近开发的一个静态角色口播视频生成器 Demo。它的目标很直接：给它一张图片、一段参考音频和一段文案，就能生成一个带字幕的 MP4 小视频。"
+    },
+    {
+      "id": "astrbot-meme-stealing-plugin",
+      "title": "AstrBot 插件：astrbot_plugin_meme_stealing",
+      "date": "2026-05-23",
+      "tags": [
+        "AstrBot",
+        "插件",
+        "表情包"
+      ],
+      "excerpt": "astrbot_plugin_meme_stealing 是我最近给 AstrBot 写的 QQ 群表情包采集与自动回复插件。"
+    },
+    {
+      "id": "astrbot-compare-plugin",
+      "title": "AstrBot 插件：astrbot_plugin_compare",
+      "date": "2026-05-10",
+      "tags": [
+        "AstrBot",
+        "插件",
+        "开源"
+      ],
+      "excerpt": "astrbot_plugin_compare 是我为 AstrBot 开发的一款插件，目前已上传 GitHub，仍在测试与完善中。"
+    },
+    {
+      "id": "hello-world",
+      "title": "Hello World!",
+      "date": "2026-05-09",
+      "tags": [
+        "网站",
+        "随笔"
+      ],
+      "excerpt": "Hello World!"
+    }
+  ]
+}

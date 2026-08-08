@@ -1,3 +1,7 @@
+---
+tags: [AstrBot, 插件, JMComic]
+---
+
 # AstrBot 插件：astrbot_plugin_jmcomic
 
 > 写于 2026 年 6 月 1 日

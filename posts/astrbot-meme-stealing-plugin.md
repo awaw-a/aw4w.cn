@@ -1,3 +1,7 @@
+---
+tags: [AstrBot, 插件, 表情包]
+---
+
 # AstrBot 插件：astrbot_plugin_meme_stealing
 
 > 写于 2026 年 5 月 23 日

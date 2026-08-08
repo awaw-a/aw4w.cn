@@ -1,3 +1,7 @@
+---
+tags: [AstrBot, 插件, 开源]
+---
+
 # AstrBot 插件：astrbot_plugin_compare
 
 > 写于 2026 年 5 月 10 日

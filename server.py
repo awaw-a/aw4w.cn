@@ -13,6 +13,8 @@ PROXY_URL = os.environ.get("PROXY_URL", "http://127.0.0.1:6185/api/v1/chat")
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "31058"))
 
+from generate_posts_index import scan_posts
+
 def mock_reply(user_text):
     """模拟回复"""
     replies = {
@@ -58,6 +60,19 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             if os.path.isfile(candidate_path):
                 path = candidate
         return super().translate_path(path)
+
+    def do_GET(self):
+        if urllib.parse.urlsplit(self.path).path == "/api/posts":
+            # 实时扫描 posts/ 目录，返回文章列表
+            posts = scan_posts(os.path.join(STATIC_DIR, "posts"))
+            payload = json.dumps({"posts": posts}, ensure_ascii=False).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json; charset=utf-8")
+            self.send_header("Cache-Control", "no-cache")
+            self.end_headers()
+            self.wfile.write(payload)
+        else:
+            super().do_GET()
 
     def do_POST(self):
         if self.path == "/api/chat":

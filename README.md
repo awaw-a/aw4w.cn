@@ -38,9 +38,11 @@
 ├── article.html        # Markdown 文章详情页
 ├── changelog.html      # 更新日志页
 ├── 404.html            # 404 页面
-├── server.py           # 静态服务 + /api/chat 代理示例
+├── server.py           # 静态服务 + /api/chat 代理 + /api/posts 文章扫描
+├── generate_posts_index.py  # 生成 posts/index.json（静态部署用）
 ├── posts/
-│   └── hello-world.md  # 博客文章
+│   ├── hello-world.md  # 博客文章
+│   └── index.json      # 文章列表（自动生成）
 ├── avatar_v2.png       # 角色头像
 ├── avatar.gif          # 动态头像资源
 └── favicon.png         # 网站图标
@@ -71,9 +73,9 @@ try_files $uri $uri.html $uri/ =404;
 
 ## 博客文章
 
-博客文章存放在 `posts/` 目录中，格式为 Markdown。
+博客文章存放在 `posts/` 目录中，格式为 Markdown。文章列表页会自动扫描 `posts/` 目录生成，**新增文章无需修改 `blog.html`**。
 
-新增文章示例：
+新增文章只需要：
 
 ```text
 posts/my-new-post.md
@@ -85,7 +87,27 @@ posts/my-new-post.md
 /article?id=my-new-post
 ```
 
-添加新文章后，需要在 `blog.html` 中补充对应的文章卡片入口。
+### 元数据（可选 front matter）
+
+文章顶部可以写 front matter 指定标签和日期：
+
+```markdown
+---
+tags: [AstrBot, 插件]
+date: 2026-06-01
+---
+
+# 文章标题
+
+> 写于 2026 年 6 月 1 日
+```
+
+未提供时自动从正文提取：标题取第一个一级标题，日期取「> 写于」行（找不到则用文件修改时间），摘要取第一段正文。
+
+### 文章列表的生成方式
+
+- **使用 `server.py`**：`GET /api/posts` 实时扫描 `posts/` 目录，本地开发即写即见。
+- **纯静态部署（Nginx）**：新增文章后运行一次 `python generate_posts_index.py` 生成 `posts/index.json`；`blog.html` 会在 `/api/posts` 不可用时自动回退到该文件。
 
 ## 聊天接口
 
