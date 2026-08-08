@@ -320,6 +320,99 @@
   }
   .send-button:not(:disabled):active { transform: scale(0.95); }
 
+  /* 会话侧边栏 */
+  .chat-body {
+    position: relative;
+    display: flex;
+    flex: 1;
+    min-height: 0;
+  }
+  .chat-main {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+  }
+  .session-sidebar {
+    width: 12.5rem;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    border-right: 1px solid rgba(88,116,71,0.14);
+    background: rgba(247,244,234,0.55);
+  }
+  .new-chat-btn {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border-radius: 0.8rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: var(--leaf-dark);
+    background: rgba(255,253,247,0.9);
+    border: 1px dashed rgba(88,116,71,0.4);
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .new-chat-btn:hover { color: var(--tomato); border-color: rgba(200,107,83,0.5); }
+  .session-list { flex: 1; overflow-y: auto; }
+  .session-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.55rem 0.7rem;
+    margin-bottom: 0.25rem;
+    border-radius: 0.7rem;
+    font-size: 0.83rem;
+    color: var(--muted);
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+  }
+  .session-item:hover { background: rgba(145,173,119,0.14); color: var(--ink); }
+  .session-item.active {
+    background: rgba(145,173,119,0.22);
+    color: var(--leaf-dark);
+    font-weight: 700;
+  }
+  .session-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .session-del {
+    flex-shrink: 0;
+    color: #a8ae9d;
+    font-size: 0.75rem;
+    opacity: 0;
+    transition: opacity 0.2s ease, color 0.2s ease;
+  }
+  .session-item:hover .session-del { opacity: 1; }
+  .session-del:hover { color: var(--tomato); }
+  .session-empty {
+    padding: 1rem 0.7rem;
+    font-size: 0.78rem;
+    color: #a8ae9d;
+    text-align: center;
+  }
+  .session-toggle {
+    color: var(--leaf-dark);
+    transition: color 0.25s ease;
+  }
+  .session-toggle:hover { color: var(--tomato); }
+
+  @media (max-width: 767px) {
+    .session-sidebar {
+      position: absolute;
+      top: 0; left: 0; bottom: 0;
+      z-index: 20;
+      margin-left: -12.5rem;
+      background: rgba(255,253,247,0.97);
+      box-shadow: 8px 0 30px rgba(38,49,38,0.1);
+      transition: margin-left 0.28s ease;
+    }
+    .session-sidebar.open { margin-left: 0; }
+    .session-del { opacity: 0.6; }
+  }
+
   @media (max-width: 767px) {
     .chat-panel {
       height: calc(100vh - 8rem);
@@ -404,9 +497,14 @@
 
           <div class="chat-header px-4 md:px-8 py-4">
             <div class="flex items-center justify-between gap-4">
-              <div>
-                <h1 class="chat-title text-base md:text-lg font-bold">若叶睦</h1>
-                <p class="chat-subtitle text-xs mt-1">Mutsumi · Online</p>
+              <div class="flex items-center gap-3">
+                <button id="sessionToggle" class="session-toggle md:hidden p-1" aria-label="会话列表">
+                  <i class="fa-solid fa-clock-rotate-left text-lg"></i>
+                </button>
+                <div>
+                  <h1 class="chat-title text-base md:text-lg font-bold">若叶睦</h1>
+                  <p class="chat-subtitle text-xs mt-1">Mutsumi · Online</p>
+                </div>
               </div>
               <span class="online-pill rounded-full px-3 py-1.5 text-xs">
                 <span class="online-dot"></span>
@@ -415,29 +513,46 @@
             </div>
           </div>
 
-          <!-- 消息展示区 -->
-          <div id="messagesArea" class="messages-area flex-1 px-4 md:px-8 py-5 space-y-4">
+          <div class="chat-body">
 
-            <!-- 默认欢迎消息 -->
-            <div class="flex justify-start">
-              <div class="bubble bubble-ai">
-                你好，我是若叶睦。<br>有什么想聊的吗？
+            <!-- 会话侧边栏 -->
+            <aside id="sessionSidebar" class="session-sidebar">
+              <div class="p-3">
+                <button id="newChatBtn" class="new-chat-btn">
+                  <i class="fa-solid fa-plus text-xs"></i> 新对话
+                </button>
               </div>
-            </div>
+              <div id="sessionList" class="session-list px-2 pb-3"></div>
+            </aside>
 
-          </div>
+            <div class="chat-main">
 
-          <!-- 输入区 -->
-          <div class="composer px-4 md:px-8 py-4 backdrop-blur-sm">
-            <div class="flex items-end gap-3">
-              <input id="chatInput" type="text"
-                class="chat-input flex-1 rounded-2xl px-4 py-3 text-sm md:text-base transition-all"
-                placeholder="输入消息，按 Enter 发送..."
-                autocomplete="off">
-              <button id="sendBtn"
-                class="send-button flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
-                <i class="fa-solid fa-paper-plane text-sm"></i>
-              </button>
+              <!-- 消息展示区 -->
+              <div id="messagesArea" class="messages-area flex-1 px-4 md:px-8 py-5 space-y-4">
+
+                <!-- 默认欢迎消息 -->
+                <div class="flex justify-start">
+                  <div class="bubble bubble-ai">
+                    你好，我是若叶睦。<br>有什么想聊的吗？
+                  </div>
+                </div>
+
+              </div>
+
+              <!-- 输入区 -->
+              <div class="composer px-4 md:px-8 py-4 backdrop-blur-sm">
+                <div class="flex items-end gap-3">
+                  <input id="chatInput" type="text"
+                    class="chat-input flex-1 rounded-2xl px-4 py-3 text-sm md:text-base transition-all"
+                    placeholder="输入消息，按 Enter 发送..."
+                    autocomplete="off">
+                  <button id="sendBtn"
+                    class="send-button flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-paper-plane text-sm"></i>
+                  </button>
+                </div>
+              </div>
+
             </div>
           </div>
 
@@ -470,20 +585,54 @@
     var messagesArea = document.getElementById('messagesArea');
     var chatInput   = document.getElementById('chatInput');
     var sendBtn     = document.getElementById('sendBtn');
+    var sessionList = document.getElementById('sessionList');
+    var sidebar     = document.getElementById('sessionSidebar');
     var isSending   = false;
+
+    // ===== 访客身份（localStorage 稳定 UUID，实现会话归属隔离） =====
+    var USERNAME = localStorage.getItem('aw4w_chat_user') || '';
+    if(!USERNAME){
+      USERNAME = 'web_' + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g,'')
+                                             : String(Date.now()) + Math.random().toString(16).slice(2,10));
+      localStorage.setItem('aw4w_chat_user', USERNAME);
+    }
+
+    var currentSession = localStorage.getItem('aw4w_chat_session') || '';
+    var messages = [];   // 当前会话消息 [{role, content}]
+    var sessions = [];   // 会话列表 [{id, name}]
+
+    function genSessionId(){
+      return crypto.randomUUID ? crypto.randomUUID()
+                               : 's' + String(Date.now()) + Math.random().toString(16).slice(2,10);
+    }
+
+    // ===== 本地消息缓存（AstrBot 不可用时兜底，也用于秒开渲染） =====
+    function cacheKey(sid){ return 'aw4w_msgs_' + sid; }
+    function loadCache(sid){
+      try { return JSON.parse(localStorage.getItem(cacheKey(sid))) || []; }
+      catch(e){ return []; }
+    }
+    function saveCache(){
+      if(currentSession) localStorage.setItem(cacheKey(currentSession), JSON.stringify(messages.slice(-100)));
+    }
+    function clearCache(sid){ localStorage.removeItem(cacheKey(sid)); }
 
     function scrollBottom(){
       if(messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
     }
 
-    function addUserBubble(text){
+    function createBubble(role, text){
       var div = document.createElement('div');
-      div.className = 'flex justify-end';
+      div.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
       var b = document.createElement('div');
-      b.className = 'bubble bubble-user';
+      b.className = 'bubble ' + (role === 'user' ? 'bubble-user' : 'bubble-ai');
       b.textContent = text;
       div.appendChild(b);
-      messagesArea.appendChild(div);
+      return div;
+    }
+
+    function addUserBubble(text){
+      messagesArea.appendChild(createBubble('user', text));
       scrollBottom();
     }
 
@@ -525,6 +674,136 @@
       scrollBottom();
     }
 
+    // ===== 消息区整体渲染 =====
+    function renderMessages(){
+      messagesArea.innerHTML = '';
+      if(!messages.length){
+        messagesArea.innerHTML = '<div class="flex justify-start"><div class="bubble bubble-ai">你好，我是若叶睦。<br>有什么想聊的吗？</div></div>';
+        return;
+      }
+      messages.forEach(function(m){
+        messagesArea.appendChild(createBubble(m.role, m.content));
+      });
+      scrollBottom();
+    }
+
+    // ===== 会话列表 =====
+    function parseSessions(json){
+      var d = json && (json.data || json);
+      var arr = (d && (d.sessions || d.list)) || (Array.isArray(d) ? d : []);
+      return arr.map(function(s){
+        return { id: s.session_id || s.id || '', name: s.display_name || s.title || '' };
+      }).filter(function(s){ return s.id; });
+    }
+
+    function sessionTitle(s){
+      if(s.name) return s.name;
+      var cached = loadCache(s.id);
+      for(var i = 0; i < cached.length; i++){
+        if(cached[i].role === 'user' && cached[i].content) return cached[i].content.slice(0, 18);
+      }
+      return '新对话';
+    }
+
+    function renderSessions(){
+      sessionList.innerHTML = '';
+      if(!sessions.length){
+        sessionList.innerHTML = '<p class="session-empty">暂无历史会话</p>';
+        return;
+      }
+      sessions.forEach(function(s){
+        var item = document.createElement('div');
+        item.className = 'session-item' + (s.id === currentSession ? ' active' : '');
+        var title = document.createElement('span');
+        title.className = 'session-title';
+        title.textContent = sessionTitle(s);
+        var del = document.createElement('button');
+        del.className = 'session-del';
+        del.innerHTML = '<i class="fa-solid fa-trash-can"></i>';
+        del.title = '删除会话';
+        del.onclick = function(e){ e.stopPropagation(); deleteSession(s.id); };
+        item.appendChild(title);
+        item.appendChild(del);
+        item.onclick = function(){ if(!isSending) switchSession(s.id); };
+        sessionList.appendChild(item);
+      });
+    }
+
+    async function refreshSessions(){
+      try {
+        var resp = await fetch('/api/chat/sessions?username=' + encodeURIComponent(USERNAME));
+        if(!resp.ok) throw new Error('HTTP ' + resp.status);
+        sessions = parseSessions(await resp.json());
+      } catch(e){ sessions = []; }
+      renderSessions();
+    }
+
+    // ===== 会话历史 =====
+    function parseHistory(json){
+      var d = json && (json.data || json);
+      var arr = (d && (d.messages || (d.session && d.session.messages))) || [];
+      if(!Array.isArray(arr)) return [];
+      return arr.map(function(m){
+        var role = m.role === 'user' ? 'user' : 'assistant';
+        var c = m.content;
+        if(Array.isArray(c)){
+          c = c.map(function(p){ return p.text || (p.data && p.data.text) || ''; }).join('');
+        }
+        if(c == null) c = m.message || m.text || '';
+        return { role: role, content: String(c) };
+      }).filter(function(m){ return m.content; });
+    }
+
+    async function loadHistory(sid){
+      try {
+        var resp = await fetch('/api/chat/history?session_id=' + encodeURIComponent(sid));
+        if(!resp.ok) throw new Error('HTTP ' + resp.status);
+        var msgs = parseHistory(await resp.json());
+        if(msgs.length && sid === currentSession){
+          messages = msgs;
+          saveCache();
+          renderMessages();
+        }
+      } catch(e){ /* 保留本地缓存 */ }
+    }
+
+    function closeSidebarMobile(){
+      if(sidebar) sidebar.classList.remove('open');
+    }
+
+    function switchSession(sid){
+      if(sid === currentSession){ closeSidebarMobile(); return; }
+      currentSession = sid;
+      localStorage.setItem('aw4w_chat_session', sid);
+      messages = loadCache(sid);
+      renderMessages();
+      renderSessions();
+      loadHistory(sid);
+      closeSidebarMobile();
+    }
+
+    function newChat(){
+      if(isSending) return;
+      currentSession = '';
+      localStorage.removeItem('aw4w_chat_session');
+      messages = [];
+      renderMessages();
+      renderSessions();
+      closeSidebarMobile();
+      chatInput.focus();
+    }
+
+    async function deleteSession(sid){
+      if(isSending) return;
+      if(!confirm('删除这个会话？')) return;
+      try {
+        await fetch('/api/chat/sessions/' + encodeURIComponent(sid), { method: 'DELETE' });
+      } catch(e){}
+      clearCache(sid);
+      sessions = sessions.filter(function(s){ return s.id !== sid; });
+      if(sid === currentSession){ newChat(); } else { renderSessions(); }
+    }
+
     // 从 SSE data JSON 中提取文本片段
     function extractDelta(jsonObj){
       // 直接字段
@@ -553,12 +832,20 @@
       var text = chatInput.value.trim();
       if(!text) return;
 
+      // 没有当前会话时创建新会话
+      if(!currentSession){
+        currentSession = genSessionId();
+        localStorage.setItem('aw4w_chat_session', currentSession);
+      }
+
       isSending = true;
       chatInput.disabled = true;
       sendBtn.disabled = true;
       chatInput.value = '';
 
       addUserBubble(text);
+      messages.push({ role: 'user', content: text });
+      saveCache();
       addLoading();
 
       try {
@@ -567,7 +854,8 @@
           headers: {'Content-Type': 'application/json'},
           body: JSON.stringify({
             message: text,
-            username: 'web_guest',
+            username: USERNAME,
+            session_id: currentSession,
             enable_streaming: true
           })
         });
@@ -624,6 +912,9 @@
         // 流结束，如果气泡为空则显示提示
         if(!fullText){
           ai.bubble.textContent = '（空回复）';
+        } else {
+          messages.push({ role: 'assistant', content: fullText });
+          saveCache();
         }
         console.log('[AstrBot] 完整回复:', fullText);
 
@@ -637,6 +928,7 @@
         sendBtn.disabled = false;
         chatInput.focus();
         scrollBottom();
+        refreshSessions(); // 新会话出现在列表中
       }
     }
 
@@ -650,6 +942,18 @@
         }
       };
     }
+    var newChatBtn = document.getElementById('newChatBtn');
+    if(newChatBtn) newChatBtn.onclick = newChat;
+    var sessionToggle = document.getElementById('sessionToggle');
+    if(sessionToggle && sidebar){
+      sessionToggle.onclick = function(){ sidebar.classList.toggle('open'); };
+    }
+
+    // ===== 初始化：恢复上次的会话 =====
+    messages = currentSession ? loadCache(currentSession) : [];
+    renderMessages();
+    if(currentSession) loadHistory(currentSession);
+    refreshSessions();
     scrollBottom();
   </script>
 
