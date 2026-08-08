@@ -14,7 +14,7 @@
 ## 功能
 
 - 首页：个人展示、角色头像、打字机气泡、社交链接。
-- 聊天：前端聊天界面，向 `/api/chat` 发送消息，可对接 AstrBot 或其他后端服务；支持多会话管理（会话列表、切换、删除、历史恢复）与访客身份隔离。
+- 聊天：前端聊天界面，向 `/api/chat` 发送消息，可对接 AstrBot 或其他后端服务；支持多会话管理（会话列表、切换、删除、历史恢复）、发送图片/文件附件与访客身份隔离。
 - 博客：文章列表页与文章详情页，文章内容使用 Markdown 编写。
 - 更新日志：用时间轴记录网站版本与更新内容。
 - 响应式布局：适配桌面端和移动端导航。
@@ -123,9 +123,15 @@ POST /api/chat
 GET    /api/chat/sessions?username=...   # 会话列表
 GET    /api/chat/history?session_id=...  # 会话历史
 DELETE /api/chat/sessions/{session_id}   # 删除会话
+POST   /api/chat/file                    # 上传附件（multipart，≤25MB）
+GET    /api/chat/file/{id}/content       # 获取附件内容（用于气泡内显示图片/下载文件）
 ```
 
+发送附件时前端会在 `POST /api/chat` 请求体中带上 `attachments: [{type, attachment_id}]`，`server.py` 会组装成 AstrBot 消息段（`plain` + `image`/`file`/`record`/`video`）。
+
 前端为每个访客在 localStorage 生成稳定的 `web_<uuid>` 用户名，不同访客的会话相互隔离；消息同时缓存在浏览器本地，AstrBot 不可用时也能恢复显示。
+
+> AstrBot API Key 需要的 scope：`chat`（对话与会话）+ `file`（附件上传/下载）。
 
 `server.py` 提供了一个简单的后端示例：
 

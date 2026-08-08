@@ -28,6 +28,23 @@ def clean_token(value, default=""):
         return v
     return default
 
+ATTACH_TYPES = {"image", "record", "file", "video"}
+
+def clean_attachments(raw):
+    """校验附件消息段，返回合法的 [{type, attachment_id}] 列表"""
+    out = []
+    if isinstance(raw, list):
+        for a in raw[:9]:
+            if not isinstance(a, dict):
+                continue
+            t = a.get("type")
+            aid = clean_token(a.get("attachment_id"))
+            if t in ATTACH_TYPES and aid:
+                out.append({"type": t, "attachment_id": aid})
+    return out
+
+MAX_UPLOAD = 25 * 1024 * 1024  # 25MB
+
 def mock_reply(user_text):
     """模拟回复"""
     replies = {
@@ -178,6 +195,28 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json(payload or {"status": "error", "data": {"messages": []}})
             return
 
+        # 附件内容 -> AstrBot GET /api/v1/files/{attachment_id}/content
+        m_file = re.fullmatch(r"/api/chat/file/([A-Za-z0-9_\-]{1,64})/content", path)
+        if m_file:
+            try:
+                req = urllib.request.Request(
+                    f"{ASTRBOT_BASE}/files/{m_file.group(1)}/content",
+                    headers=self._astrbot_headers()
+                )
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    data = resp.read()
+                    ctype = resp.headers.get("Content-Type", "application/octet-stream")
+                self.send_response(200)
+                self.send_header("Content-Type", ctype)
+                self.send_header("Cache-Control", "max-age=86400")
+                self.end_headers()
+                self.wfile.write(data)
+            except Exception as e:
+                print(f"AstrBot 附件获取失败: {e}")
+                self.send_response(404)
+                self.end_headers()
+            return
+
         super().do_GET()
 
     def do_DELETE(self):
@@ -191,16 +230,16 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response(404)
             self.end_headers()
 
-    def _open_astrbot(self, user_text, streaming, username="web_guest", session_id=""):
-        """发起 AstrBot 请求，返回 HTTPResponse（调用方负责关闭）"""
+    def _open_astrbot(self, message, streaming, username="web_guest", session_id=""):
+        """发起 AstrBot 请求，message 为字符串或消息段数组，返回 HTTPResponse（调用方负责关闭）"""
         payload = {
-            "message": user_text,
+            "message": message,
             "username": username,
             "enable_streaming": streaming
         }
         if session_id:
             payload["session_id"] = session_id
-        astrbot_body = json.dumps(payload).encode("utf-8")
+        astrbot_body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
         req = urllib.request.Request(
             PROXY_URL,
             data=astrbot_body,
@@ -209,10 +248,10 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         )
         return urllib.request.urlopen(req, timeout=60)
 
-    def _fetch_reply(self, user_text, username="web_guest", session_id=""):
+    def _fetch_reply(self, message, username="web_guest", session_id=""):
         """非流式获取完整回复，失败返回 None"""
         try:
-            with self._open_astrbot(user_text, False, username, session_id) as resp:
+            with self._open_astrbot(message, False, username, session_id) as resp:
                 raw = resp.read().decode("utf-8", errors="replace")
                 return _parse_astrbot_response(raw)
         except Exception as e:
@@ -235,12 +274,12 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(f"data: {chunk}\n\n".encode("utf-8"))
         self.wfile.flush()
 
-    def _chat_stream(self, user_text, username="web_guest", session_id=""):
+    def _chat_stream(self, message, username="web_guest", session_id="", fallback_text=""):
         """流式：优先实时透传 AstrBot SSE，失败则整段回复，再失败模拟兜底"""
         upstream = None
         fallback_reply = None
         try:
-            upstream = self._open_astrbot(user_text, True, username, session_id)
+            upstream = self._open_astrbot(message, True, username, session_id)
             ctype = upstream.headers.get("Content-Type", "")
             if "event-stream" not in ctype:
                 # 上游未返回 SSE：按普通响应解析后走整段下发
@@ -266,20 +305,20 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
                     upstream.close()
             else:
                 if not fallback_reply:
-                    fallback_reply = self._fetch_reply(user_text, username, session_id)
+                    fallback_reply = self._fetch_reply(message, username, session_id)
                 if not fallback_reply:
-                    fallback_reply = mock_reply(user_text)
+                    fallback_reply = mock_reply(fallback_text or "[附件]")
                 self._write_sse_chunk(fallback_reply)
             self.wfile.write(b"data: [DONE]\n\n")
             self.wfile.flush()
         except (BrokenPipeError, ConnectionResetError):
             pass  # 客户端提前断开
 
-    def _chat_plain(self, user_text, username="web_guest", session_id=""):
+    def _chat_plain(self, message, username="web_guest", session_id="", fallback_text=""):
         """非流式：AstrBot 优先，模拟兜底"""
-        reply = self._fetch_reply(user_text, username, session_id)
+        reply = self._fetch_reply(message, username, session_id)
         if not reply:
-            reply = mock_reply(user_text)
+            reply = mock_reply(fallback_text or "[附件]")
         resp_data = json.dumps({
             "choices": [{"message": {"content": reply}}]
         }, ensure_ascii=False)
@@ -291,7 +330,33 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(resp_data.encode("utf-8"))
 
     def do_POST(self):
-        if self.path == "/api/chat":
+        path = urllib.parse.urlsplit(self.path).path
+
+        if path == "/api/chat/file":
+            # 附件上传 -> AstrBot POST /api/v1/file（multipart 原样转发）
+            length = int(self.headers.get("Content-Length", 0))
+            if length <= 0:
+                self._send_json({"status": "error", "message": "空文件"}, 400)
+                return
+            if length > MAX_UPLOAD:
+                self._send_json({"status": "error", "message": "文件过大（>25MB）"}, 413)
+                return
+            body = self.rfile.read(length)
+            headers = {"Content-Type": self.headers.get("Content-Type", "application/octet-stream")}
+            if ASTRBOT_API_KEY:
+                headers["Authorization"] = f"Bearer {ASTRBOT_API_KEY}"
+            try:
+                req = urllib.request.Request(
+                    f"{ASTRBOT_BASE}/file", data=body, headers=headers, method="POST"
+                )
+                with urllib.request.urlopen(req, timeout=120) as resp:
+                    self._send_json(resp.read())
+            except Exception as e:
+                print(f"AstrBot 附件上传失败: {e}")
+                self._send_json({"status": "error", "message": "上传失败"}, 502)
+            return
+
+        if path == "/api/chat":
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length)
 
@@ -306,10 +371,17 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
             username = clean_token(data.get("username"), "web_guest")
             session_id = clean_token(data.get("session_id"))
 
-            if data.get("enable_streaming"):
-                self._chat_stream(user_text, username, session_id)
+            # 附件：组装 AstrBot 消息段（plain + image/file/record/video）
+            attachments = clean_attachments(data.get("attachments"))
+            if attachments:
+                message = ([{"type": "plain", "text": user_text}] if user_text else []) + attachments
             else:
-                self._chat_plain(user_text, username, session_id)
+                message = user_text
+
+            if data.get("enable_streaming"):
+                self._chat_stream(message, username, session_id, user_text)
+            else:
+                self._chat_plain(message, username, session_id, user_text)
         else:
             self.send_response(404)
             self.end_headers()

@@ -399,6 +399,83 @@
   }
   .session-toggle:hover { color: var(--tomato); }
 
+  /* 附件 */
+  .attach-btn {
+    color: var(--muted);
+    transition: color 0.2s ease, transform 0.2s ease;
+  }
+  .attach-btn:hover { color: var(--leaf-dark); transform: translateY(-1px); }
+  .attach-tray {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  .attach-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.7rem;
+    font-size: 0.78rem;
+    color: var(--leaf-dark);
+    background: rgba(145,173,119,0.16);
+    border: 1px solid rgba(88,116,71,0.2);
+    max-width: 14rem;
+  }
+  .attach-chip.error {
+    color: #9b4a39;
+    background: rgba(200,107,83,0.12);
+    border-color: rgba(200,107,83,0.25);
+  }
+  .attach-chip .chip-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .attach-chip .chip-thumb {
+    width: 1.6rem;
+    height: 1.6rem;
+    border-radius: 0.4rem;
+    object-fit: cover;
+  }
+  .attach-chip .chip-del {
+    color: #a8ae9d;
+    transition: color 0.2s ease;
+  }
+  .attach-chip .chip-del:hover { color: var(--tomato); }
+  .attach-chip .chip-spin { color: var(--sprout); }
+
+  .bubble-img {
+    display: block;
+    max-width: min(16rem, 100%);
+    max-height: 16rem;
+    border-radius: 0.7rem;
+    margin-bottom: 0.4rem;
+  }
+  .bubble-file {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.6rem;
+    border-radius: 0.6rem;
+    font-size: 0.8rem;
+    background: rgba(88,116,71,0.1);
+    color: inherit;
+    text-decoration: none;
+    margin-bottom: 0.3rem;
+    max-width: 100%;
+  }
+  .bubble-file span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bubble-user .bubble-file {
+    background: rgba(255,253,247,0.18);
+    color: #fffdf7;
+  }
+
   @media (max-width: 767px) {
     .session-sidebar {
       position: absolute;
@@ -541,7 +618,13 @@
 
               <!-- 输入区 -->
               <div class="composer px-4 md:px-8 py-4 backdrop-blur-sm">
+                <div id="attachTray" class="attach-tray" style="display:none;"></div>
                 <div class="flex items-end gap-3">
+                  <input type="file" id="fileInput" multiple hidden
+                    accept="image/*,video/*,audio/*,.pdf,.txt,.md,.zip,.doc,.docx">
+                  <button id="attachBtn" class="attach-btn flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center" aria-label="发送附件" title="发送图片或文件">
+                    <i class="fa-solid fa-paperclip text-base"></i>
+                  </button>
                   <input id="chatInput" type="text"
                     class="chat-input flex-1 rounded-2xl px-4 py-3 text-sm md:text-base transition-all"
                     placeholder="输入消息，按 Enter 发送..."
@@ -598,8 +681,110 @@
     }
 
     var currentSession = localStorage.getItem('aw4w_chat_session') || '';
-    var messages = [];   // 当前会话消息 [{role, content}]
+    var messages = [];   // 当前会话消息 [{role, content, attachments?}]
     var sessions = [];   // 会话列表 [{id, name}]
+
+    // ===== 附件（待发送） =====
+    var pendingAttachments = [];  // [{type, attachment_id, name, uploading, error, thumbUrl}]
+    var attachTray = document.getElementById('attachTray');
+    var fileInput  = document.getElementById('fileInput');
+    var attachBtn  = document.getElementById('attachBtn');
+
+    function classifyAttachType(mime){
+      if(mime.indexOf('image/') === 0) return 'image';
+      if(mime.indexOf('audio/') === 0) return 'record';
+      if(mime.indexOf('video/') === 0) return 'video';
+      return 'file';
+    }
+
+    function attachIcon(type){
+      return {image: 'fa-image', record: 'fa-microphone', video: 'fa-video'}[type] || 'fa-file';
+    }
+
+    function renderAttachTray(){
+      if(!pendingAttachments.length){
+        attachTray.style.display = 'none';
+        attachTray.innerHTML = '';
+        return;
+      }
+      attachTray.style.display = 'flex';
+      attachTray.innerHTML = '';
+      pendingAttachments.forEach(function(a, idx){
+        var chip = document.createElement('span');
+        chip.className = 'attach-chip' + (a.error ? ' error' : '');
+        if(a.thumbUrl){
+          var img = document.createElement('img');
+          img.className = 'chip-thumb';
+          img.src = a.thumbUrl;
+          chip.appendChild(img);
+        } else {
+          var ic = document.createElement('i');
+          ic.className = 'fa-solid ' + (a.uploading ? 'fa-circle-notch fa-spin chip-spin' : attachIcon(a.type));
+          chip.appendChild(ic);
+        }
+        var name = document.createElement('span');
+        name.className = 'chip-name';
+        name.textContent = a.error ? (a.name + '（上传失败）') : a.name;
+        chip.appendChild(name);
+        var del = document.createElement('button');
+        del.className = 'chip-del';
+        del.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        del.onclick = function(){
+          if(a.thumbUrl) URL.revokeObjectURL(a.thumbUrl);
+          pendingAttachments.splice(idx, 1);
+          renderAttachTray();
+        };
+        chip.appendChild(del);
+        attachTray.appendChild(chip);
+      });
+    }
+
+    function findAttachmentId(json){
+      // 宽容解析 AstrBot 上传响应中的 attachment_id
+      if(!json) return '';
+      if(json.attachment_id) return json.attachment_id;
+      if(json.id) return json.id;
+      var d = json.data;
+      if(d){
+        if(typeof d === 'string') return d;
+        return d.attachment_id || d.id || '';
+      }
+      return '';
+    }
+
+    async function uploadFile(file){
+      var item = {
+        type: classifyAttachType(file.type || ''),
+        attachment_id: '',
+        name: file.name || '未命名文件',
+        uploading: true,
+        error: false,
+        thumbUrl: (file.type || '').indexOf('image/') === 0 ? URL.createObjectURL(file) : ''
+      };
+      pendingAttachments.push(item);
+      renderAttachTray();
+      try {
+        var fd = new FormData();
+        fd.append('file', file, file.name);
+        var resp = await fetch('/api/chat/file', { method: 'POST', body: fd });
+        if(!resp.ok) throw new Error('HTTP ' + resp.status);
+        var json = await resp.json();
+        var aid = findAttachmentId(json);
+        if(!aid) throw new Error('no attachment_id');
+        item.attachment_id = aid;
+      } catch(e){
+        console.error('[附件] 上传失败:', e);
+        item.error = true;
+      }
+      item.uploading = false;
+      renderAttachTray();
+    }
+
+    function clearPendingAttachments(){
+      pendingAttachments.forEach(function(a){ if(a.thumbUrl) URL.revokeObjectURL(a.thumbUrl); });
+      pendingAttachments = [];
+      renderAttachTray();
+    }
 
     function genSessionId(){
       return crypto.randomUUID ? crypto.randomUUID()
@@ -621,18 +806,53 @@
       if(messagesArea) messagesArea.scrollTop = messagesArea.scrollHeight;
     }
 
-    function createBubble(role, text){
+    function createBubble(role, text, attachments){
       var div = document.createElement('div');
       div.className = role === 'user' ? 'flex justify-end' : 'flex justify-start';
       var b = document.createElement('div');
       b.className = 'bubble ' + (role === 'user' ? 'bubble-user' : 'bubble-ai');
-      b.textContent = text;
+      (attachments || []).forEach(function(a){
+        var url = '/api/chat/file/' + encodeURIComponent(a.attachment_id) + '/content';
+        if(a.type === 'image'){
+          var img = document.createElement('img');
+          img.className = 'bubble-img';
+          img.src = url;
+          img.alt = a.name || '图片';
+          img.onerror = function(){
+            // 图片不可用时降级为文件链接
+            var link = document.createElement('a');
+            link.className = 'bubble-file';
+            link.target = '_blank';
+            link.href = url;
+            link.innerHTML = '<i class="fa-solid fa-image"></i><span>' + (a.name || '图片') + '</span>';
+            img.replaceWith(link);
+          };
+          b.appendChild(img);
+        } else {
+          var link = document.createElement('a');
+          link.className = 'bubble-file';
+          link.target = '_blank';
+          link.href = url;
+          var ic = document.createElement('i');
+          ic.className = 'fa-solid ' + attachIcon(a.type);
+          var nm = document.createElement('span');
+          nm.textContent = a.name || '附件';
+          link.appendChild(ic);
+          link.appendChild(nm);
+          b.appendChild(link);
+        }
+      });
+      if(text){
+        var t = document.createElement('div');
+        t.textContent = text;
+        b.appendChild(t);
+      }
       div.appendChild(b);
       return div;
     }
 
-    function addUserBubble(text){
-      messagesArea.appendChild(createBubble('user', text));
+    function addUserBubble(text, attachments){
+      messagesArea.appendChild(createBubble('user', text, attachments));
       scrollBottom();
     }
 
@@ -682,7 +902,7 @@
         return;
       }
       messages.forEach(function(m){
-        messagesArea.appendChild(createBubble(m.role, m.content));
+        messagesArea.appendChild(createBubble(m.role, m.content, m.attachments));
       });
       scrollBottom();
     }
@@ -746,12 +966,20 @@
       return arr.map(function(m){
         var role = m.role === 'user' ? 'user' : 'assistant';
         var c = m.content;
+        var atts = [];
         if(Array.isArray(c)){
-          c = c.map(function(p){ return p.text || (p.data && p.data.text) || ''; }).join('');
+          // 消息段：分离文本与附件
+          c = c.map(function(p){
+            if(p && p.type && p.attachment_id && p.type !== 'plain'){
+              atts.push({ type: p.type, attachment_id: p.attachment_id, name: p.name || '' });
+              return '';
+            }
+            return (p && (p.text || (p.data && p.data.text))) || '';
+          }).join('');
         }
         if(c == null) c = m.message || m.text || '';
-        return { role: role, content: String(c) };
-      }).filter(function(m){ return m.content; });
+        return { role: role, content: String(c), attachments: atts };
+      }).filter(function(m){ return m.content || (m.attachments && m.attachments.length); });
     }
 
     async function loadHistory(sid){
@@ -775,6 +1003,7 @@
       if(sid === currentSession){ closeSidebarMobile(); return; }
       currentSession = sid;
       localStorage.setItem('aw4w_chat_session', sid);
+      clearPendingAttachments();
       messages = loadCache(sid);
       renderMessages();
       renderSessions();
@@ -786,6 +1015,7 @@
       if(isSending) return;
       currentSession = '';
       localStorage.removeItem('aw4w_chat_session');
+      clearPendingAttachments();
       messages = [];
       renderMessages();
       renderSessions();
@@ -830,7 +1060,15 @@
     async function doSend(){
       if(isSending) return;
       var text = chatInput.value.trim();
-      if(!text) return;
+
+      // 已就绪的附件
+      var readyAtts = pendingAttachments.filter(function(a){ return !a.uploading && !a.error && a.attachment_id; });
+      if(!text && !readyAtts.length){
+        if(pendingAttachments.some(function(a){ return a.uploading; })){
+          addErrorBubble('附件上传中，请稍候…');
+        }
+        return;
+      }
 
       // 没有当前会话时创建新会话
       if(!currentSession){
@@ -843,21 +1081,31 @@
       sendBtn.disabled = true;
       chatInput.value = '';
 
-      addUserBubble(text);
-      messages.push({ role: 'user', content: text });
+      var sentAtts = readyAtts.map(function(a){
+        return { type: a.type, attachment_id: a.attachment_id, name: a.name };
+      });
+      addUserBubble(text, sentAtts);
+      messages.push({ role: 'user', content: text, attachments: sentAtts });
       saveCache();
+      clearPendingAttachments();
       addLoading();
 
       try {
+        var payload = {
+          message: text,
+          username: USERNAME,
+          session_id: currentSession,
+          enable_streaming: true
+        };
+        if(sentAtts.length){
+          payload.attachments = sentAtts.map(function(a){
+            return { type: a.type, attachment_id: a.attachment_id };
+          });
+        }
         var response = await fetch('/api/chat', {
           method: 'POST',
           headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({
-            message: text,
-            username: USERNAME,
-            session_id: currentSession,
-            enable_streaming: true
-          })
+          body: JSON.stringify(payload)
         });
 
         if(!response.ok) throw new Error('HTTP ' + response.status);
@@ -947,6 +1195,13 @@
     var sessionToggle = document.getElementById('sessionToggle');
     if(sessionToggle && sidebar){
       sessionToggle.onclick = function(){ sidebar.classList.toggle('open'); };
+    }
+    if(attachBtn && fileInput){
+      attachBtn.onclick = function(){ fileInput.click(); };
+      fileInput.onchange = function(){
+        Array.prototype.forEach.call(fileInput.files || [], function(f){ uploadFile(f); });
+        fileInput.value = '';
+      };
     }
 
     // ===== 初始化：恢复上次的会话 =====
