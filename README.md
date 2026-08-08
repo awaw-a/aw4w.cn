@@ -121,15 +121,28 @@ POST /api/chat
 
 - 静态文件目录：`STATIC_DIR`
 - AstrBot 接口地址：`PROXY_URL`
+- AstrBot API Key：`ASTRBOT_API_KEY`（可选，在 AstrBot WebUI 设置中创建，需 `chat` scope）
 - 监听端口：`PORT`
+- 支持 SSE 流式透传：前端开启 `enable_streaming` 时逐段实时转发 AstrBot 回复
 - 当 AstrBot 请求失败时，会返回内置的模拟回复
 
-部署前请根据服务器实际路径修改：
+部署前请根据服务器实际路径修改（均可用环境变量覆盖）：
 
 ```python
 STATIC_DIR = "/www/wwwroot/hello_site"
 PROXY_URL = "http://127.0.0.1:6185/api/v1/chat"
+ASTRBOT_API_KEY = "abk_xxx"
 PORT = 31058
+```
+
+如果通过 Nginx 反向代理 `server.py`，请为 `/api/chat` 关闭响应缓冲以保证流式效果：
+
+```nginx
+location /api/ {
+    proxy_pass http://127.0.0.1:31058;
+    proxy_buffering off;
+    proxy_cache off;
+}
 ```
 
 ## 部署说明
