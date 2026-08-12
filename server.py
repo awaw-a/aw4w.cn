@@ -4,6 +4,9 @@ import http.server
 import json
 import os
 import re
+import base64
+import hashlib
+import hmac
 import urllib.request
 import urllib.error
 import urllib.parse
@@ -20,6 +23,50 @@ _p = PROXY_URL.rstrip("/")
 ASTRBOT_BASE = _p[:-len("/chat")] if _p.endswith("/chat") else _p
 
 from generate_posts_index import scan_posts
+
+# ---- 会话删除：AstrBot OpenAPI 无 DELETE 接口，需调用 dashboard API + JWT ----
+_ASTRBOT_HTTP = PROXY_URL.split("/api/")[0]  # 例如 http://127.0.0.1:6185
+_JWT_SECRET = None
+
+
+def _get_jwt_secret():
+    global _JWT_SECRET
+    if _JWT_SECRET is None:
+        try:
+            with open("/root/data/cmd_config.json", "r", encoding="utf-8-sig") as _f:
+                _cfg = json.load(_f)
+            _JWT_SECRET = (_cfg.get("dashboard") or {}).get("jwt_secret") or ""
+        except Exception as e:
+            print(f"读取 jwt_secret 失败: {e}")
+            _JWT_SECRET = ""
+    return _JWT_SECRET
+
+
+def _b64url(data):
+    return base64.urlsafe_b64encode(data).rstrip(b"=")
+
+
+def _dashboard_jwt(username):
+    """签发 AstrBot dashboard JWT（HS256）"""
+    header = _b64url(json.dumps({"alg": "HS256", "typ": "JWT"}).encode())
+    payload = _b64url(json.dumps({"username": username}).encode())
+    sig = _b64url(hmac.new(_get_jwt_secret().encode(), header + b"." + payload, hashlib.sha256).digest())
+    return (header + b"." + payload + b"." + sig).decode()
+
+
+def _session_creator(session_id):
+    """查 platform_sessions 表获取会话归属者（只读 SQLite）"""
+    try:
+        import sqlite3
+        db = sqlite3.connect("file:/root/data/data_v4.db?mode=ro", uri=True, timeout=5)
+        row = db.execute(
+            "SELECT creator FROM platform_sessions WHERE session_id=?", (session_id,)
+        ).fetchone()
+        db.close()
+        return row[0] if row else ""
+    except Exception as e:
+        print(f"查询会话归属失败: {e}")
+        return ""
 
 def clean_token(value, default=""):
     """校验 username / session_id，只允许字母数字和 _-，防止注入"""
@@ -231,12 +278,26 @@ class ProxyHandler(http.server.SimpleHTTPRequestHandler):
         super().do_GET()
 
     def do_DELETE(self):
-        # 删除会话 -> AstrBot DELETE /api/v1/chat/sessions/{session_id}
+        # 删除会话 -> AstrBot dashboard API /api/chat/delete_session（OpenAPI 无 DELETE 接口）
         path = urllib.parse.urlsplit(self.path).path
         m = re.fullmatch(r"/api/chat/sessions/([A-Za-z0-9_\-]{1,64})", path)
         if m:
-            payload = self._proxy_json("DELETE", f"{ASTRBOT_BASE}/chat/sessions/{m.group(1)}")
-            self._send_json(payload or {"status": "error"})
+            sid = m.group(1)
+            creator = _session_creator(sid)
+            if not creator:
+                self._send_json({"status": "error", "message": "session not found"})
+                return
+            url = f"{_ASTRBOT_HTTP}/api/chat/delete_session?session_id={urllib.parse.quote(sid)}"
+            try:
+                req = urllib.request.Request(
+                    url, headers={"Authorization": f"Bearer {_dashboard_jwt(creator)}"}
+                )
+                with urllib.request.urlopen(req, timeout=20) as resp:
+                    payload = json.loads(resp.read().decode("utf-8"))
+                self._send_json(payload)
+            except Exception as e:
+                print(f"删除会话失败: {e}")
+                self._send_json({"status": "error", "message": str(e)})
         else:
             self.send_response(404)
             self.end_headers()
