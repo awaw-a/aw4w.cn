@@ -1,6 +1,17 @@
 {
   "posts": [
     {
+      "id": "langengmiao",
+      "title": "烂梗喵：在 CS2 里一键发送随机烂梗",
+      "date": "2026-08-18",
+      "tags": [
+        "CS2",
+        "Windows",
+        "开源"
+      ],
+      "excerpt": "烂梗喵 是我为 Windows 和 CS2 写的一个桌面小工具。它会从 sb6657 获取随机烂梗，再通过 CS2 原生 CFG 命令发送到全体聊天或队内聊天。"
+    },
+    {
       "id": "astrbot-plugin-jmcomic",
       "title": "AstrBot 插件：astrbot_plugin_jmcomic",
       "date": "2026-06-01",
